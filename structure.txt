@@ -1,0 +1,46 @@
+tshirt-store/
+│
+├── /public/                      # Publicly accessible files
+│   ├── index.php                 # Entry point (loads homepage)
+│   ├── shop.php                  # Displays all products
+│   ├── product.php               # Single product details
+│   ├── cart.php                  # Cart page
+│   ├── checkout.php             # Checkout form
+│   ├── about.php                 # About page
+│   ├── contact.php               # Contact form
+│   ├── assets/                   # CSS, JS, images, fonts
+│
+├── /includes/                   # Shared PHP components
+│   ├── header.php
+│   ├── footer.php
+│   ├── navbar.php
+│   └── config.php               # Database connection settings
+│
+├── /controllers/                # Handles business logic
+│   ├── ProductController.php    # Load product data
+│   ├── CartController.php       # Add/remove items
+│   ├── CheckoutController.php   # Validate & process checkout
+│   ├── ContactController.php    # Handle contact form
+│
+├── /models/                     # Database interaction (optional MVC)
+│   ├── Product.php              # Product model
+│   ├── Cart.php                 # Cart logic
+│   ├── Order.php                # Order saving
+│
+├── /views/                      # Template fragments (optional)
+│   ├── product_card.php
+│   └── product_detail.php
+│
+├── /database/
+│   ├── db.php                   # Database connection
+│   └── schema.sql               # SQL script to create tables
+│
+├── /uploads/                    # Product image uploads (if admin panel)
+│
+├── /admin/                      # Admin panel (if needed)
+│   ├── login.php
+│   ├── dashboard.php
+│   ├── add_product.php
+│   └── edit_product.php
+│
+└── .htaccess  

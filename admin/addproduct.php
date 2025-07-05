@@ -70,7 +70,7 @@ if (!isset($_SESSION['csrf_token'])) {
       padding: 12px;
       border: none;
       border-radius: 5px;
-      font-size: 16px;
+      font-description: 16px;
       cursor: pointer;
     }
 
@@ -95,6 +95,11 @@ if (!isset($_SESSION['csrf_token'])) {
   <div class="form-container">
     <h2>Add New Product</h2>
     
+    <?php
+    require_once '../includes/functions.php'; 
+    echo display_flash_message(); 
+    ?>
+    
     <form action="../admin/adfunc/product-process.php" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
@@ -109,8 +114,8 @@ if (!isset($_SESSION['csrf_token'])) {
       </div>
 
       <div class="form-group">
-        <label for="size">Size</label>
-        <input type="text" name="size" id="size" required>
+        <label for="size">Size</label> 
+        <input type="text" name="size" id="size" required> 
       </div>
 
       <div class="form-group">

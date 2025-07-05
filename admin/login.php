@@ -19,16 +19,16 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // Flash message function (if not defined elsewhere)
-function getFlashMessage() {
-    if (!isset($_SESSION['flash_message'])) return null;
+// function getFlashMessage() {
+//     if (!isset($_SESSION['flash_message'])) return null;
 
-    $msg = $_SESSION['flash_message'];
-    unset($_SESSION['flash_message']); // Clear after showing
-    return [
-        'type' => htmlspecialchars($msg['type']),
-        'message' => htmlspecialchars($msg['message'])
-    ];
-}
+//     $msg = $_SESSION['flash_message'];
+//     unset($_SESSION['flash_message']); // Clear after showing
+//     return [
+//         'type' => htmlspecialchars($msg['type']),
+//         'message' => htmlspecialchars($msg['message'])
+//     ];
+// }
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -10,7 +10,10 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-
+// Create CSRF token if it doesn't exist
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 if (!isset($_GET['id'])) {
     echo "No product ID provided.";
@@ -21,67 +24,95 @@ $id = intval($_GET['id']);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name']);
-    $brand = trim($_POST['brand']);
-    $price = floatval($_POST['price']);
-    $description = trim($_POST['description']);
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error_message = "CSRF token mismatch. Action aborted.";
+        // Optionally, unset the token to force regeneration on next load
+        // unset($_SESSION['csrf_token']); 
+    } else {
+        // CSRF token is valid, proceed with form processing
+        $name = trim($_POST['name']);
+        // $brand = trim($_POST['brand']); // brand is removed, using description
+        $price = floatval($_POST['price']);
+    $description = trim($_POST['description']); // This now comes from the field named 'description'
     
     // Handle file upload
-    $image_path = null;
+    $new_image_db_path = null; // This will hold the path to be stored in DB, e.g., "uploads/products/newimage.jpg"
+    
+    // Check if a new image was actually uploaded
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = 'uploads/';
-        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $max_size = 5 * 1024 * 1024; // 5MB
-        
-        // Create upload directory if it doesn't exist
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
-        }
-        
-        // Validate file
-        if (!in_array($_FILES['image']['type'], $allowed_types)) {
-            $error_message = "Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.";
-        } elseif ($_FILES['image']['size'] > $max_size) {
-            $error_message = "File size too large. Maximum 5MB allowed.";
-        } else {
-            // Generate unique filename
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid() . '.' . $file_extension;
-            $image_path = $upload_dir . $filename;
-            
-            if (!move_uploaded_file($_FILES['image']['tmp_name'], $image_path)) {
-                $error_message = "Failed to upload image.";
+        // Filesystem path for upload, relative to this script (admin/editproduct.php)
+        $filesystem_upload_dir = '../uploads/products/'; 
+        // Path prefix for DB storage, relative to web root
+        $db_storage_path_prefix = 'uploads/products/';
+
+        // Define allowed types (extensions for upload_file) and max size
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        $max_size_bytes = 5 * 1024 * 1024; // 5MB
+
+        // Ensure base upload directory exists (upload_file also does this, but good for clarity)
+        if (!is_dir($filesystem_upload_dir)) {
+            if (!mkdir($filesystem_upload_dir, 0755, true) && !is_dir($filesystem_upload_dir)) {
+                $error_message = "Failed to create upload directory.";
             }
         }
+
+        if (!isset($error_message)) {
+            $uploadResult = upload_file(
+                $_FILES['image'],
+                $filesystem_upload_dir,
+                $allowed_extensions,
+                $max_size_bytes
+            );
+
+            if ($uploadResult['success']) {
+                $filesystem_image_path = $uploadResult['filename']; // Full filesystem path
+                $filename_only = basename($filesystem_image_path);
+                $new_image_db_path = $db_storage_path_prefix . $filename_only; // Path for DB
+
+                // TODO: Consider deleting the old image if a new one is uploaded successfully.
+                // This would require fetching the old image path from $product['image']
+                // and then calling delete_file('../' . $product['image']).
+                // Be careful with this, only delete after successful DB update.
+            } else {
+                $error_message = 'Image upload error: ' . $uploadResult['message'];
+            }
+        }
+    } elseif (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        // An error occurred with the upload, other than no file being selected
+        $error_message = 'Image upload failed with error code: ' . $_FILES['image']['error'];
     }
     
-    // Update database if no upload errors
+    // Update database if no upload errors (from either CSRF or file upload)
     if (!isset($error_message)) {
-        if ($image_path) {
+        if ($new_image_db_path) {
             // Update with new image
-            $stmt = $conn->prepare("UPDATE products SET name=?, brand=?, price=?, description=?, image=? WHERE id=?");
-            $stmt->bind_param("ssdssi", $name, $brand, $price, $description, $image_path, $id);
+            // Assuming 'brand' column is now 'description'. The $description variable holds the new value.
+            $stmt = $mysqli ->prepare("UPDATE products SET name=?, price=?, description=?, image=? WHERE id=?");
+            $stmt->bind_param("sdssi", $name, $price, $description, $new_image_db_path, $id); // s d s s i
         } else {
             // Update without changing image
-            $stmt = $conn->prepare("UPDATE products SET name=?, brand=?, price=?, description=? WHERE id=?");
-            $stmt->bind_param("ssdsi", $name, $brand, $price, $description, $id);
+            $stmt = $mysqli ->prepare("UPDATE products SET name=?, price=?, description=? WHERE id=?");
+            $stmt->bind_param("sdsi", $name, $price, $description, $id); // s d s i
         }
 
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Product updated successfully!";
             $stmt->close();
-            $conn->close();
+            $mysqli ->close();
             header("Location: dashboard.php");
             exit();
         } else { 
-            $error_message = "Error updating product: " . $conn->error;
+            $error_message = "Error updating product: " . $mysqli ->error;
         }
         $stmt->close();
+        }
+        // End of CSRF token valid block
     }
 }
 
 // Fetch product data using prepared statement
-$stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
+$stmt = $mysqli ->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -274,20 +305,27 @@ if (!$product) {
         <a href="dashboard.php" class="back-link">← Back to Products</a>
         
         <h2>Edit Product</h2>
+
+        <?php 
+        // Display flash messages (from session)
+        // functions.php is already required at the top of the file
+        echo display_flash_message(); 
+        ?>
         
         <?php if (isset($error_message)): ?>
             <div class="message error"><?php echo htmlspecialchars($error_message); ?></div>
         <?php endif; ?>
         
         <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
             <div>
                 <label for="name">Product Name *</label>
                 <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($product['name']); ?>" required maxlength="255">
             </div>
 
             <div>
-                <label for="brand">Brand *</label>
-                <input type="text" id="size" name="size" value="<?php echo htmlspecialchars($product['size']); ?>" required maxlength="100">
+                <label for="description">Description *</label> <!-- Changed label -->
+                <input type="text" id="description" name="description" value="<?php echo htmlspecialchars($product['description'] ?? ''); ?>" required maxlength="100"> <!-- Value from product['description'] -->
             </div>
 
             <div>
@@ -307,10 +345,30 @@ if (!$product) {
                     Accepted formats: JPEG, PNG, GIF, WebP. Maximum size: 5MB
                 </small>
                 
-                <?php if (!empty($product['image']) && file_exists($product['image'])): ?>
+                <?php 
+                // Check if product image exists and construct the correct path
+                // $product['image'] is expected to store something like 'uploads/products/image.jpg'
+                $current_image_path_for_display = '';
+                if (!empty($product['image'])) {
+                    // Path relative to web root (stored in DB)
+                    $image_path_from_db = $product['image']; 
+                    // Filesystem path to check existence, relative to this script's location
+                    $image_filesystem_path = '../' . $image_path_from_db; 
+                    
+                    if (file_exists($image_filesystem_path)) {
+                        // Path for src attribute, relative to this script's location
+                        $current_image_path_for_display = '../' . htmlspecialchars($image_path_from_db);
+                    }
+                }
+                ?>
+                <?php if ($current_image_path_for_display): ?>
                     <div class="current-image">
                         <p><strong>Current Image:</strong></p>
-                        <img src="<?php echo htmlspecialchars($product['image']); ?>" alt="Current product image">
+                        <img src="<?php echo $current_image_path_for_display; ?>" alt="Current product image">
+                    </div>
+                <?php elseif (!empty($product['image'])): ?>
+                    <div class="current-image">
+                        <p><strong>Current Image:</strong> (File not found at <?php echo htmlspecialchars('../' . $product['image']); ?>)</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -321,4 +379,4 @@ if (!$product) {
 </body>
 </html>
 
-<?php $conn->close(); ?>
+<?php $mysqli ->close(); ?>

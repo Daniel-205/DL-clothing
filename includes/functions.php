@@ -400,4 +400,84 @@ function redirect_with_message($url, $message, $type = 'info') {
     exit;
 }
 
+// to resize image
+function resizeImage($sourcePath, $destPath, $maxWidth = 500, $quality = 80) {
+    $info = getimagesize($sourcePath);
+    if (!$info) return false;
+
+    list($width, $height) = $info;
+    $mime = $info['mime'];
+
+    switch ($mime) {
+        case 'image/jpeg':
+            $srcImage = imagecreatefromjpeg($sourcePath);
+            break;
+        case 'image/png':
+            $srcImage = imagecreatefrompng($sourcePath);
+            break;
+        case 'image/webp':
+            $srcImage = imagecreatefromwebp($sourcePath);
+            break;
+        default:
+            return false;
+    }
+
+    // Calculate new dimensions
+    if ($width <= $maxWidth) {
+        $newWidth = $width;
+        $newHeight = $height;
+    } else {
+        $newWidth = $maxWidth;
+        $newHeight = intval($height * ($maxWidth / $width));
+    }
+
+    $newImage = imagecreatetruecolor($newWidth, $newHeight);
+
+    // For PNG/WebP with transparency
+    if ($mime === 'image/png' || $mime === 'image/webp') {
+        imagealphablending($newImage, false);
+        imagesavealpha($newImage, true);
+    }
+
+    imagecopyresampled($newImage, $srcImage, 0, 0, 0, 0, 
+        $newWidth, $newHeight, $width, $height);
+
+    // Save image
+    switch ($mime) {
+        case 'image/jpeg':
+            imagejpeg($newImage, $destPath, $quality);
+            break;
+        case 'image/png':
+            imagepng($newImage, $destPath, 8); // 0 (no compression) - 9
+            break;
+        case 'image/webp':
+            imagewebp($newImage, $destPath, $quality);
+            break;
+    }
+
+    imagedestroy($srcImage);
+    imagedestroy($newImage);
+
+    return true;
+}
+
+
+
+/**
+ * Alias for set_flash_message (for backward compatibility)
+ * @param string $type
+ * @param string $message
+ */
+function setFlashMessage($type, $message) {
+    return set_flash_message($type, $message);
+}
+
+/**
+ * Alias for get_flash_message (for backward compatibility)
+ * @return array|null
+ */
+function getFlashMessage() {
+    return get_flash_message();
+}
+
 ?>

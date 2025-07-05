@@ -231,7 +231,7 @@ $result = $mysqli->query($sql);
 <body>
   <div class="dashboard-container">
     <h1>Manage Products</h1>
-    <a href="admin-addproduct.php" class="btn-edit">Add New product</a>
+    <a href="addproduct.php" class="btn-edit">Add New product</a>
     <a href="logout.php" class="btn-back">logout</a>
     <table class="product-table">
       <thead>
@@ -250,12 +250,12 @@ $result = $mysqli->query($sql);
             <tr>
               <td><?php echo htmlspecialchars($row['id']); ?></td>
               <td><?php echo htmlspecialchars($row['name']); ?></td>
-              <td><?php echo htmlspecialchars($row['brand']); ?></td>
+              <td><?php echo htmlspecialchars($row['size']); ?></td>
               <td><?php echo htmlspecialchars($row['price']); ?></td>
               <td><img src="<?php echo htmlspecialchars($row['image']); ?>" alt="" class="thumbnail"></td>
               <td>
                 <a href="admin-editproduct.php?id=<?php echo $row['id']; ?>" class="btn-edit">Edit</a>
-                <a href="admin-deleteproduct.php?id=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                <a href="delete.php?id=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
 
               </td>
             </tr>

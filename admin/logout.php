@@ -13,9 +13,9 @@ if (session_status() === PHP_SESSION_NONE) {
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
 
     // Optional: Log admin activity
-    if (isset($_SESSION['admin_id'])) {
-        logAdminActivity($_SESSION['admin_id'], 'logout', 'Admin logged out successfully');
-    }
+    // if (isset($_SESSION['admin_id'])) {
+    //     logAdminActivity($_SESSION['admin_id'], 'logout', 'Admin logged out successfully');
+    // }
 
     // Store flash message before destroying session
     $flashType = 'success';
@@ -35,8 +35,8 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true
     session_destroy();
 
     // Start a new session just to store flash message
-    session_start();
-    setFlashMessage($flashType, $flashMessage);
+    // session_start();
+    // setFlashMessage($flashType, $flashMessage);
 }
 
 

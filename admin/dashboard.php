@@ -4,7 +4,7 @@
 require_once '../includes/dbconfig.php';
 require_once '../includes/functions.php';
 
-// Use the function instead of manual session checking
+
 require_login('admin', 'admin-login.php');
 
 $sql = "SELECT * FROM products ORDER BY id DESC";
@@ -255,7 +255,7 @@ $result = $mysqli->query($sql);
               <td><img src="<?php echo htmlspecialchars($row['image']); ?>" alt="" class="thumbnail"></td>
               <td>
                 <a href="admin-editproduct.php?id=<?php echo $row['id']; ?>" class="btn-edit">Edit</a>
-                 <a href="admin-deleteproduct.php?id=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
+                <a href="admin-deleteproduct.php?id=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
 
               </td>
             </tr>
@@ -269,4 +269,4 @@ $result = $mysqli->query($sql);
 </body>
 </html>
 
-<?php $$mysqli->close(); ?>
+<?php $mysqli->close(); ?>

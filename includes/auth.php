@@ -22,7 +22,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (empty($username) || empty($password)) {
         $login_error = "Both fields are required.";
-        return;
+        $_SESSION['flash_message'] = ['type' => 'error', 'message' => $login_error];
+        header("Location: ../admin/login.php");
+        exit;
     }
 
     //  Protect Against XSS
@@ -54,9 +56,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit;
         } else {
             $login_error = "Incorrect password.";
+            $_SESSION['flash_message'] = ['type' => 'error', 'message' => $login_error];
+            header("Location: ../admin/login.php");
+            exit;
         }
     } else {
         $login_error = "Username not found.";
+        $_SESSION['flash_message'] = ['type' => 'error', 'message' => $login_error];
+        header("Location: ../admin/login.php");
+        exit;
     }
 
     $stmt->close();

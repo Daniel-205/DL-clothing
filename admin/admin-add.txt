@@ -1,0 +1,24 @@
+<?php
+
+require_once '../includes/dbconfig.php';
+
+// admin user
+$username = 'admin'; 
+$password_plain = '123'; 
+
+// Hash password
+$hashed_password = password_hash($password_plain, PASSWORD_DEFAULT);
+
+// execute and insert
+$stmt = $mysqli->prepare("INSERT INTO admins_users (username, password) VALUES (?, ?)");
+$stmt->bind_param("ss", $username, $hashed_password);
+
+if ($stmt->execute()) {
+    echo "Admin user created successfully!";
+} else {
+    echo "Error: " . $stmt->error;
+}
+
+$stmt->close();
+$mysqli->close();
+?>

@@ -25,7 +25,7 @@
                     <li class="nav-item"><a class="nav-link" href="index.php #about">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="index.php #contact">Contact</a></li>
                     <li class="nav-item ms-2">
-                        <!-- <a class="nav-link position-relative" href="cart.html"> -->
+                        <a class="nav-link position-relative" href="cart.php">
                             <i class="fas fa-shopping-cart"></i>
                             <span class="cart-count position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
                         </a>

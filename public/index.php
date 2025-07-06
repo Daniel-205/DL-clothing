@@ -42,11 +42,11 @@
                                 echo '        <div class="product-image-container">';
                                 // Assuming 'image' column stores the path relative to a base uploads directory e.g., 'uploads/image.jpg'
                                 // If 'image' column contains absolute URLs or needs different handling, adjust accordingly.
-                                echo '            <img src="' . htmlspecialchars($row["image"]) . '" class="card-img-top" alt="' . htmlspecialchars($row["name"]) . '">';
+                                                echo '<img src="../' . htmlspecialchars($row["image"]) . '" class="card-img-top" alt="' . htmlspecialchars($row["name"]) . '">';
                                 echo '        </div>';
                                 echo '        <div class="card-body">';
                                 echo '            <h5 class="card-title text-truncate">' . htmlspecialchars($row["name"]) . '</h5>';
-                                echo '            <p class="card-text text-muted text-truncate">Brand: ' . htmlspecialchars($row["brand"]) . '</p>';
+                                echo '            <p class="card-text text-muted text-truncate">Size: ' . htmlspecialchars($row["size"]) . '</p>';
                                 echo '            <a href="shop.php?product_id=' . htmlspecialchars($row["id"]) . '" class="btn btn-sm btn-outline-indigo-600">View Details</a>';
                                 echo '        </div>';
                                 echo '    </div>';

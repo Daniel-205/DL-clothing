@@ -252,9 +252,9 @@ $result = $mysqli->query($sql);
               <td><?php echo htmlspecialchars($row['name']); ?></td>
               <td><?php echo htmlspecialchars($row['size']); ?></td>
               <td><?php echo htmlspecialchars($row['price']); ?></td>
-              <td><img src="<?php echo htmlspecialchars($row['image']); ?>" alt="" class="thumbnail"></td>
+              <td><img src="../<?php echo htmlspecialchars($row['image']); ?>" alt="" class="thumbnail"></td>
               <td>
-                <a href="admin-editproduct.php?id=<?php echo $row['id']; ?>" class="btn-edit">Edit</a>
+                <a href="editproduct.php?id=<?php echo $row['id']; ?>" class="btn-edit">Edit</a>
                 <a href="delete.php?id=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
 
               </td>

@@ -32,9 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // CSRF token is valid, proceed with form processing
         $name = trim($_POST['name']);
-        // $brand = trim($_POST['brand']); // brand is removed, using description
+        // $brand = trim($_POST['brand']); // brand is removed, using size
         $price = floatval($_POST['price']);
-    $description = trim($_POST['description']); // This now comes from the field named 'description'
+    $size = trim($_POST['size']); // This now comes from the field named 'size'
     
     // Handle file upload
     $new_image_db_path = null; // This will hold the path to be stored in DB, e.g., "uploads/products/newimage.jpg"
@@ -87,13 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($error_message)) {
         if ($new_image_db_path) {
             // Update with new image
-            // Assuming 'brand' column is now 'description'. The $description variable holds the new value.
-            $stmt = $mysqli ->prepare("UPDATE products SET name=?, price=?, description=?, image=? WHERE id=?");
-            $stmt->bind_param("sdssi", $name, $price, $description, $new_image_db_path, $id); // s d s s i
+            // Assuming 'brand' column is now 'size'. The $size variable holds the new value.
+            $stmt = $mysqli ->prepare("UPDATE products SET name=?, price=?, size=?, image=? WHERE id=?");
+            $stmt->bind_param("sdssi", $name, $price, $size, $new_image_db_path, $id); // s d s s i
         } else {
             // Update without changing image
-            $stmt = $mysqli ->prepare("UPDATE products SET name=?, price=?, description=? WHERE id=?");
-            $stmt->bind_param("sdsi", $name, $price, $description, $id); // s d s i
+            $stmt = $mysqli ->prepare("UPDATE products SET name=?, price=?, size=? WHERE id=?");
+            $stmt->bind_param("sdsi", $name, $price, $size, $id); // s d s i
         }
 
         if ($stmt->execute()) {
@@ -324,8 +324,8 @@ if (!$product) {
             </div>
 
             <div>
-                <label for="description">Description *</label> <!-- Changed label -->
-                <input type="text" id="description" name="description" value="<?php echo htmlspecialchars($product['description'] ?? ''); ?>" required maxlength="100"> <!-- Value from product['description'] -->
+                <label for="size">Size</label> <!-- Changed label -->
+                <input type="text" id="size" name="size" value="<?php echo htmlspecialchars($product['size'] ?? ''); ?>" required maxlength="100"> <!-- Value from product['size'] -->
             </div>
 
             <div>
@@ -333,10 +333,7 @@ if (!$product) {
                 <input type="number" id="price" step="0.01" min="0" name="price" value="<?php echo htmlspecialchars($product['price']); ?>" required>
             </div>
 
-            <!-- <div>
-                <label for="description">Description *</label>
-                <textarea id="description" name="description" required maxlength="1000"><?php echo htmlspecialchars($product['description']); ?></textarea>
-            </div> -->
+           
 
             <div>
                 <label for="image">Upload New Image (Optional)</label>

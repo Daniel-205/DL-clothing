@@ -44,14 +44,7 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
                     <div class="product-card h-100">
                         <div class="position-relative">
                             <!-- Product Image -->
-                            <img src="<?= htmlspecialchars($product['image_url']) ?>" class="product-img w-100">
-                                 
-                            <!-- Badge (for sales/featured) -->
-                            <?php if($product['is_featured']): ?>
-                                <span class="position-absolute top-0 start-0 bg-danger text-white px-3 py-1 m-2 rounded-pill">
-                                    HOT
-                                </span>
-                            <?php endif; ?>
+                            <img src="../<?= htmlspecialchars($product['image']) ?>" class="card-img-top" alt="<?= htmlspecialchars($product['name']) ?>">
                         </div>
                         
                         <div class="card-body p-4">
@@ -62,13 +55,16 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
                             
                             <!-- Price -->
                             <p class="price-tag mb-3">
-                                $<?= number_format($product['price'], 2) ?>
+                                GH₵<?= number_format($product['price'], 2) ?>
                             </p>
                             
                             <!-- Add to Cart Button -->
-                            <button class="btn btn-custom text-white w-100">
-                                <i class="bi bi-cart-plus"></i> Add to Cart
-                            </button>
+                           <form action="../../add-to-cart.php" method="POST" class="mt-2">
+                                <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn btn-sm btn-dark">Add to Cart</button>
+                            </form>
+
                         </div>
                     </div>
                 </div>
@@ -77,7 +73,7 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
     </div>
     <?php include '../includes/footer.php'; ?>
 
-    <!-- Bootstrap Icons (for cart/search icons) -->
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     

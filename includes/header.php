@@ -1,3 +1,18 @@
+<?php
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Calculate total items in cart
+$totalCartItems = 0;
+if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
+    foreach ($_SESSION['cart'] as $item) {
+        if (isset($item['quantity'])) {
+            $totalCartItems += $item['quantity'];
+        }
+    }
+}
+?>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +42,9 @@
                     <li class="nav-item ms-2">
                         <a class="nav-link position-relative" href="cart.php">
                             <i class="fas fa-shopping-cart"></i>
-                            <span class="cart-count position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+                            <span class="cart-count position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <?php echo $totalCartItems; ?>
+                            </span>
                         </a>
                     </li>
                 </ul>

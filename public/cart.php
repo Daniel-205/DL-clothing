@@ -53,7 +53,19 @@ include '../includes/header.php';
                                                     <?php echo htmlspecialchars($item['name']); ?>
                                                 </td>
                                                 <td>GHS <?php echo number_format($item['price'], 2); ?></td>
-                                                <td><?php echo $item['quantity']; ?></td>
+                                                <td style="min-width: 120px;">
+                                                    <form action="admin\cart-logic\update-cart-quantity.php" method="POST" style="display: inline-flex; align-items: center; gap: 5px;">
+                                                        <input type="hidden" name="product_id" value="<?php echo $item['id']; ?>">
+                                                        <input type="hidden" name="action" value="decrease">
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">-</button>
+                                                    </form>
+                                                    <span style="padding: 0 5px;"><?php echo $item['quantity']; ?></span>
+                                                    <form action="update-cart-quantity.php" method="POST" style="display: inline-flex; align-items: center; gap: 5px;">
+                                                        <input type="hidden" name="product_id" value="<?php echo $item['id']; ?>">
+                                                        <input type="hidden" name="action" value="increase">
+                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">+</button>
+                                                    </form>
+                                                </td>
                                                 <td>GHS <?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
                                                 <td>
                                                     <a href="cart.php?remove=<?php echo $item['id']; ?>" class="text-danger" onclick="return confirm('Remove this item?');">Remove</a>
@@ -128,3 +140,31 @@ include '../includes/header.php';
 </section>
 
 <?php include '../includes/footer.php'; ?>
+<script>
+    function confirmRemove(itemName) {
+        return confirm(`Are you sure you want to remove "${itemName}" from your cart?`);
+    }
+
+    function validateCheckout() {
+        const checkbox = document.getElementById('agreeTerms');
+        if (!checkbox.checked) {
+            alert('Please agree to the terms and conditions before proceeding.');
+            return false;
+        }
+        return true;
+    }
+
+    // Add smooth animations on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    });
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+        observer.observe(el);
+    });
+</script>

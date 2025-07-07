@@ -59,8 +59,8 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
                             </p>
                             
                             <!-- Add to Cart Button -->
-                           <form action="../../add-to-cart.php" method="POST" class="mt-2">
-                                <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
+                            <form action="../admin/cart-logic/add-to-cart.php" method="POST" class="mt-2">
+                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                 <input type="hidden" name="quantity" value="1">
                                 <button type="submit" class="btn btn-sm btn-dark">Add to Cart</button>
                             </form>

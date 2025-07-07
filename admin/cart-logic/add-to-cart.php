@@ -1,8 +1,8 @@
 <?php
 session_start();
 
-require_once '../includes/dbconfig.php';
-require_once '../includes/functions.php';
+require_once '../../includes/dbconfig.php';
+require_once '../../includes/functions.php';
 
 
 if (!isset($_SESSION['last_regeneration'])) {
@@ -25,19 +25,19 @@ $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
 // Fallback
 if (!$product_id || !$quantity || $quantity < 1) {
     $_SESSION['flash_message'] = "Invalid product or quantity.";
-    header("Location: cart.php");
+    header("Location:  ../../public/cart.php");
     exit;
 }
 
 // Fetch product from DB
-$stmt = $conn->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+$stmt = $mysqli ->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
     $_SESSION['flash_message'] = "Product not found.";
-    header("Location: cart.php");
+    header("Location:  ../../public/cart.php");
     exit;
 }
 
@@ -62,6 +62,6 @@ if (isset($_SESSION['cart'][$product_id])) {
 }
 
 $_SESSION['flash_message'] = " Product added to cart!";
-header("Location: cart.php");
+header("Location:  ../../public/cart.php");
 exit;
 ?>

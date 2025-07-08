@@ -1,7 +1,8 @@
 <?php
 session_start();
+require_once '../../includes/dbconfig.php';
 require_once '../../includes/functions.php'; 
-require_once '../../includes/session-cart.php';
+// require_once '../../includes/session-cart.php';
 
 $is_ajax = is_ajax_request(); // Check once
 

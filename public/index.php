@@ -1,7 +1,6 @@
 
 <?php include '../includes/dbconfig.php'; 
 
-
  include '../includes/header.php';
   ?>
 

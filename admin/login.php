@@ -1,6 +1,7 @@
 <?php 
 require_once '../includes/dbconfig.php';
 require_once '../includes/auth.php';
+require_once '../includes/functions.php';
 
 // Start session centrally (if not already started)
 if (session_status() === PHP_SESSION_NONE) {
@@ -152,12 +153,17 @@ if (empty($_SESSION['csrf_token'])) {
 
         <?php
             $flashMessage = getFlashMessage();
-            if ($flashMessage):
+
+            if ($flashMessage && is_array($flashMessage)): 
                 $alertClass = ($flashMessage['type'] === 'error') ? 'alert-danger' : 'alert-success';
-        ?> 
-            <div class="alert <?= $alertClass ?>">
-                <?= $flashMessage['message'] ?>
-            </div>
+            ?>
+                <div class="alert <?= $alertClass ?>">
+                    <?= htmlspecialchars($flashMessage['message']) ?>
+                </div>
+        <?php elseif (is_string($flashMessage)):  ?>
+                <div class="alert alert-info">
+                    <?= htmlspecialchars($flashMessage) ?>
+                </div>
         <?php endif; ?>
 
         <form action="../includes/auth.php" method="POST">

@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+
+
 // Handle item removal from cart
 if (isset($_GET['remove']) && is_numeric($_GET['remove'])) {
     $removeId = intval($_GET['remove']);
@@ -12,8 +14,8 @@ if (isset($_GET['remove']) && is_numeric($_GET['remove'])) {
 // Setup initial totals
 $cartItems = $_SESSION['cart'] ?? [];
 $subtotal = 0;
-$shipping = 15; // fixed
-$taxRate = 0.05;
+$shipping = 0; // fixed
+$taxRate = 0;
 
 // Calculate subtotal
 foreach ($cartItems as $item) {
@@ -49,22 +51,14 @@ include '../includes/header.php';
                                         <?php foreach ($cartItems as $item): ?>
                                             <tr>
                                                 <td>
-                                                    <img src="<?php echo htmlspecialchars($item['image']); ?>" width="50" height="50" style="object-fit:cover; border-radius:5px; margin-right:10px;">
+                                                    <img src="../<?php echo htmlspecialchars($item['image']); ?>" width="50" height="50" style="object-fit:cover; border-radius:5px; margin-right:10px;">
                                                     <?php echo htmlspecialchars($item['name']); ?>
                                                 </td>
                                                 <td>GHS <?php echo number_format($item['price'], 2); ?></td>
                                                 <td style="min-width: 120px;">
-                                                    <form action="admin\cart-logic\update-cart-quantity.php" method="POST" style="display: inline-flex; align-items: center; gap: 5px;">
-                                                        <input type="hidden" name="product_id" value="<?php echo $item['id']; ?>">
-                                                        <input type="hidden" name="action" value="decrease">
-                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">-</button>
-                                                    </form>
-                                                    <span style="padding: 0 5px;"><?php echo $item['quantity']; ?></span>
-                                                    <form action="update-cart-quantity.php" method="POST" style="display: inline-flex; align-items: center; gap: 5px;">
-                                                        <input type="hidden" name="product_id" value="<?php echo $item['id']; ?>">
-                                                        <input type="hidden" name="action" value="increase">
-                                                        <button type="submit" class="btn btn-outline-secondary btn-sm">+</button>
-                                                    </form>
+                                                    <a href="../admin/cart-logic/update-cart-quantity.php?product_id=<?php echo $item['id']; ?>&action=decrease" class="btn btn-outline-secondary btn-sm">-</a>
+                                                    <span style="padding: 0 10px;"><?php echo $item['quantity']; ?></span>
+                                                    <a href="../admin/cart-logic/update-cart-quantity.php?product_id=<?php echo $item['id']; ?>&action=increase" class="btn btn-outline-secondary btn-sm">+</a>
                                                 </td>
                                                 <td>GHS <?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
                                                 <td>
@@ -98,13 +92,13 @@ include '../includes/header.php';
                             <span class="cart-subtotal">GHS <?php echo number_format($subtotal, 2); ?></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-gray-600">Shipping</span>
+                            <span class="text-gray-600">Delivery</span>
                             <span class="cart-shipping">GHS <?php echo $subtotal > 0 ? number_format($shipping, 2) : '0.00'; ?></span>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
+                        <!-- <div class="d-flex justify-content-between mb-2">
                             <span class="text-gray-600">Tax (5%)</span>
-                            <span class="cart-tax">GHS <?php echo number_format($tax, 2); ?></span>
-                        </div>
+                            <span class="cart-tax">GHS <php echo number_format($tax, 2); ?></span>
+                        </div> -->
 
                         <hr class="my-4">
 

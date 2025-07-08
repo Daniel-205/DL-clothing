@@ -3,6 +3,7 @@ session_start();
 
 require_once '../../includes/dbconfig.php';
 require_once '../../includes/functions.php';
+// require_once '../../includes/session-cart.php';
 
 
 if (!isset($_SESSION['last_regeneration'])) {
@@ -65,3 +66,4 @@ $_SESSION['flash_message'] = " Product added to cart!";
 header("Location:  ../../public/cart.php");
 exit;
 ?>
+<!-- more work will bee done here -->

@@ -151,10 +151,10 @@ if (empty($_SESSION['csrf_token'])) {
         </div>
 
         <?php
-        $flashMessage = getFlashMessage();
-        if ($flashMessage):
-            $alertClass = ($flashMessage['type'] === 'error') ? 'alert-danger' : 'alert-success';
-        ?>
+            $flashMessage = getFlashMessage();
+            if ($flashMessage):
+                $alertClass = ($flashMessage['type'] === 'error') ? 'alert-danger' : 'alert-success';
+        ?> 
             <div class="alert <?= $alertClass ?>">
                 <?= $flashMessage['message'] ?>
             </div>

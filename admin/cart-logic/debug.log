@@ -1,0 +1,40 @@
+POST: Array
+(
+    [product_id] => 7
+    [action] => increase
+    [csrf_token] => 3ddfbcee47e488d94cc1a0754f931ebbf6d052f88b98e26fd9ca25f26eed191b
+)
+
+SESSION CART BEFORE: Array
+(
+    [7] => Array
+        (
+            [id] => 7
+            [name] => GRACE
+            [price] => 233.00
+            [image] => uploads/products/6869ade2729ba_1751756258.png
+            [quantity] => 3
+        )
+
+)
+
+POST: Array
+(
+    [product_id] => 7
+    [action] => increase
+    [csrf_token] => 3ddfbcee47e488d94cc1a0754f931ebbf6d052f88b98e26fd9ca25f26eed191b
+)
+
+SESSION CART BEFORE: Array
+(
+    [7] => Array
+        (
+            [id] => 7
+            [name] => GRACE
+            [price] => 233.00
+            [image] => uploads/products/6869ade2729ba_1751756258.png
+            [quantity] => 3
+        )
+
+)
+

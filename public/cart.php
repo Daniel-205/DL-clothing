@@ -1,7 +1,8 @@
 <?php
 session_start();
-
+require_once '../includes/dbconfig.php';
 require_once '../includes/functions.php'; // For CSRF token
+
 
 // Generate CSRF token if not already set by functions.php
 if (empty($_SESSION['csrf_token'])) {

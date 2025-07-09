@@ -263,6 +263,12 @@ include '../includes/header.php';
         });
     });
 
+    .catch(async error => {
+        const raw = await error.response?.text?.() ?? '';
+        console.error(' Failed to parse JSON:', raw);
+    });
+
+
     document.querySelectorAll('.fade-in').forEach(el => {
         observer.observe(el);
     });

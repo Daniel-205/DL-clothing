@@ -1,4 +1,8 @@
 <?php
+// Check if the request is AJAX
+ob_start(); // Start output buffering
+ini_set('display_errors', 0); // Avoid leaking PHP warnings into AJAX response
+
 session_start();
 require_once '../../includes/dbconfig.php';
 require_once '../../includes/functions.php'; 
@@ -8,14 +12,18 @@ $is_ajax = is_ajax_request(); // Check once
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-    set_flash_message('error', 'CSRF token validation failed. Please try again.');
     if ($is_ajax) {
+        ob_clean(); // clean buffer
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'CSRF token validation failed.']);
         exit;
+    } else {
+        set_flash_message('error', 'CSRF token validation failed. Please try again.');
+        header("Location: ../../public/cart.php"); 
+        exit;
     }
-    header("Location: ../../public/cart.php"); 
-    exit;
+}
+
 }
 
 // Ensure cart exists
@@ -91,6 +99,7 @@ if ($is_ajax) { // Use the $is_ajax variable
     $itemExistsInCart = isset($_SESSION['cart'][$product_id]);
     $currentQuantity = $itemExistsInCart ? $_SESSION['cart'][$product_id]['quantity'] : 0;
 
+    ob_clean();// Clear the output buffer
     header('Content-Type: application/json');
     echo json_encode([
         'success' => $success,

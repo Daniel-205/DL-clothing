@@ -24,7 +24,7 @@ if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     }
 }
 
-}
+
 
 // Ensure cart exists
 if (!isset($_SESSION['cart'])) {
@@ -121,4 +121,6 @@ if ($is_ajax) { // Use the $is_ajax variable
 // Redirect back to the cart page for non-AJAX requests
 header("Location: ../../public/cart.php");
 exit;
+ob_end_clean(); 
+
 ?>

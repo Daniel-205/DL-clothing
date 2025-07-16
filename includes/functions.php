@@ -488,4 +488,15 @@ function is_ajax_request() {
     return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 }
 
+
+function get_or_create_visitor_token() {
+    if (!isset($_COOKIE['visitor_token'])) {
+        $token = bin2hex(random_bytes(32));
+        setcookie('visitor_token', $token, time() + (86400 * 30), "/", "", false, true); 
+        $_COOKIE['visitor_token'] = $token; 
+    }
+    return $_COOKIE['visitor_token'];
+}
+
+
 ?>

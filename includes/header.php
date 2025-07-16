@@ -3,6 +3,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+
+require_once '../includes/functions.php';
+
 // Calculate total items in cart
 $totalCartItems = 0;
 if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {

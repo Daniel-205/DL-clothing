@@ -1,55 +1,63 @@
 <?php
 session_start();
-
 require_once '../../includes/dbconfig.php';
 require_once '../../includes/functions.php';
-// require_once '../../includes/session-cart.php';
 
-
-if (!isset($_SESSION['last_regeneration'])) {
-    $_SESSION['last_regeneration'] = time();
-} elseif (time() - $_SESSION['last_regeneration'] > 300) {
-    session_regenerate_id(true);
-    $_SESSION['last_regeneration'] = time();
+// Generate or retrieve visitor token (persistent user identifier)
+if (!isset($_COOKIE['visitor_token'])) {
+    $visitor_token = bin2hex(random_bytes(16));
+    setcookie('visitor_token', $visitor_token, time() + (86400 * 30), "/"); // Expires in 30 days
+} else {
+    $visitor_token = $_COOKIE['visitor_token'];
 }
-
-// Initialize cart session if not set
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
-
 
 // Input validation
 $product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
 $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
 
-// Fallback
 if (!$product_id || !$quantity || $quantity < 1) {
     $_SESSION['flash_message'] = "Invalid product or quantity.";
-    header("Location:  ../../public/cart.php");
+    header("Location: ../../public/cart.php");
     exit;
 }
 
-// Fetch product from DB
-$stmt = $mysqli ->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
+// Fetch product info
+$stmt = $mysqli->prepare("SELECT id, name, price, image FROM products WHERE id = ?");
 $stmt->bind_param("i", $product_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
     $_SESSION['flash_message'] = "Product not found.";
-    header("Location:  ../../public/cart.php");
+    header("Location: ../../public/cart.php");
     exit;
 }
 
 $product = $result->fetch_assoc();
 
-// Initialize cart if not already
+// Check if item already exists in the persistent cart
+$stmt = $mysqli->prepare("SELECT quantity FROM forever_cart WHERE visitor_token = ? AND product_id = ?");
+$stmt->bind_param("si", $visitor_token, $product_id);
+$stmt->execute();
+$existing = $stmt->get_result()->fetch_assoc();
+
+if ($existing) {
+    // Update quantity if already in cart
+    $new_quantity = $existing['quantity'] + $quantity;
+    $stmt = $mysqli->prepare("UPDATE forever_cart SET quantity = ?, last_updated = NOW() WHERE visitor_token = ? AND product_id = ?");
+    $stmt->bind_param("isi", $new_quantity, $visitor_token, $product_id);
+} else {
+    // Insert new cart item
+    $stmt = $mysqli->prepare("INSERT INTO forever_cart (visitor_token, product_id, quantity, last_updated) VALUES (?, ?, ?, NOW())");
+    $stmt->bind_param("sii", $visitor_token, $product_id, $quantity);
+}
+$stmt->execute();
+
+// Update session cart (for display purposes)
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// If already in cart, update quantity
 if (isset($_SESSION['cart'][$product_id])) {
     $_SESSION['cart'][$product_id]['quantity'] += $quantity;
 } else {
@@ -62,8 +70,6 @@ if (isset($_SESSION['cart'][$product_id])) {
     ];
 }
 
-$_SESSION['flash_message'] = " Product added to cart!";
-header("Location:  ../../public/cart.php");
+$_SESSION['flash_message'] = "Product added to cart!";
+header("Location: ../../public/cart.php");
 exit;
-?>
-<!-- more work will bee done here -->

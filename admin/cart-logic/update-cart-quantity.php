@@ -1,19 +1,17 @@
 <?php
-// Check if the request is AJAX
 ob_start(); // Start output buffering
-ini_set('display_errors', 0); // Avoid leaking PHP warnings into AJAX response
+ini_set('display_errors', 0);
 
 session_start();
 require_once '../../includes/dbconfig.php';
-require_once '../../includes/functions.php'; 
-// require_once '../../includes/session-cart.php';
+require_once '../../includes/functions.php';
 
-$is_ajax = is_ajax_request(); // Check once
+$is_ajax = is_ajax_request();
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     if ($is_ajax) {
-        ob_clean(); // clean buffer
+        ob_clean();
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'CSRF token validation failed.']);
         exit;
@@ -24,87 +22,84 @@ if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
     }
 }
 
-
-
-// Ensure cart exists
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
-
-// Validate product_id
-$product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
-if (!$product_id) {
-    set_flash_message('error', 'Invalid product ID.');
-    if ($is_ajax) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Invalid product ID.']);
-        exit;
-    }
+// Get visitor token from cookie
+$visitor_token = $_COOKIE['visitor_token'] ?? null;
+if (!$visitor_token) {
+    set_flash_message('error', 'Visitor session not found.');
     header("Location: ../../public/cart.php");
     exit;
 }
 
-// Validate action (increase, decrease) or new quantity
+// Ensure session cart exists
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
+}
+
+// Input validation
+$product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
 $action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
 $new_quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
 
+if (!$product_id) {
+    send_json_or_redirect(false, 'Invalid product ID.', $is_ajax);
+}
+
+// --- Begin Quantity Update Logic ---
 if (isset($_SESSION['cart'][$product_id])) {
     if ($action === 'increase') {
         $_SESSION['cart'][$product_id]['quantity']++;
     } elseif ($action === 'decrease') {
         $_SESSION['cart'][$product_id]['quantity']--;
         if ($_SESSION['cart'][$product_id]['quantity'] <= 0) {
-            unset($_SESSION['cart'][$product_id]); // Remove item if quantity is 0 or less
+            unset($_SESSION['cart'][$product_id]);
         }
     } elseif ($new_quantity !== null && $new_quantity >= 0) {
-        // This part allows setting a specific quantity directly, e.g., from an input field
         if ($new_quantity == 0) {
             unset($_SESSION['cart'][$product_id]);
         } else {
             $_SESSION['cart'][$product_id]['quantity'] = $new_quantity;
         }
+    }
+
+    // Sync with database (forever_cart)
+    if (isset($_SESSION['cart'][$product_id])) {
+        $quantity = $_SESSION['cart'][$product_id]['quantity'];
+        $stmt = $mysqli->prepare("INSERT INTO forever_cart (visitor_token, product_id, quantity, last_updated)
+                                  VALUES (?, ?, ?, NOW())
+                                  ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), last_updated = NOW()");
+        $stmt->bind_param("sii", $visitor_token, $product_id, $quantity);
+        $stmt->execute();
     } else {
-        // Invalid action or quantity, do nothing or set a flash message
-        set_flash_message('error', "Invalid quantity update.");
+        // Remove from DB if quantity is 0
+        $stmt = $mysqli->prepare("DELETE FROM forever_cart WHERE visitor_token = ? AND product_id = ?");
+        $stmt->bind_param("si", $visitor_token, $product_id);
+        $stmt->execute();
     }
+
 } else {
-    set_flash_message('error', "Product not found in cart for quantity update.");
-    if ($is_ajax) { // Use the $is_ajax variable
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Product not found in cart.']);
-        exit;
-    }
+    send_json_or_redirect(false, 'Product not found in cart.', $is_ajax);
 }
 
-// If we reach here and it's an AJAX request, it implies an update occurred or an item was removed.
-if ($is_ajax) { // Use the $is_ajax variable
-    // Recalculate totals for the response
-    $subtotal = 0;
-    if (isset($_SESSION['cart'])) {
-        foreach ($_SESSION['cart'] as $cart_item) { // Renamed to avoid conflict with $item outside if needed
-            $subtotal += $cart_item['price'] * $cart_item['quantity'];
-        }
-    }
-    $taxRate = 0.05;
-    $shippingCost = 15; // Fixed shipping cost
-    $tax = $subtotal * $taxRate;
-    $grandTotal = $subtotal + $tax + ($subtotal > 0 ? $shippingCost : 0);
+// Totals
+$subtotal = 0;
+foreach ($_SESSION['cart'] as $cart_item) {
+    $subtotal += $cart_item['price'] * $cart_item['quantity'];
+}
+$taxRate = 0.05;
+$shippingCost = 15;
+$tax = $subtotal * $taxRate;
+$grandTotal = $subtotal + $tax + ($subtotal > 0 ? $shippingCost : 0);
 
-    $flash = get_flash_message(); // Get and clear any flash message that might have been set
-    $message = $flash['message'] ?? 'Cart updated successfully.';
-    $success = !($flash && $flash['type'] === 'error'); // Success is true if no error flash message was set
+$currentQuantity = $_SESSION['cart'][$product_id]['quantity'] ?? 0;
+$itemExistsInCart = isset($_SESSION['cart'][$product_id]);
 
-    // If an item quantity became 0 and it was removed, $new_quantity might be 0
-    // and the item won't be in $_SESSION['cart'][$product_id]
-    $itemExistsInCart = isset($_SESSION['cart'][$product_id]);
-    $currentQuantity = $itemExistsInCart ? $_SESSION['cart'][$product_id]['quantity'] : 0;
-
-    ob_clean();// Clear the output buffer
+if ($is_ajax) {
+    ob_clean();
     header('Content-Type: application/json');
     echo json_encode([
-        'success' => $success,
-        'message' => $message,
-        'cart' => $_SESSION['cart'] ?? [], // Send current state of cart
+        'success' => true,
+        'message' => 'Cart updated successfully.',
+        'cart' => $_SESSION['cart'],
         'totals' => [
             'subtotal' => number_format($subtotal, 2),
             'tax' => number_format($tax, 2),
@@ -112,15 +107,25 @@ if ($is_ajax) { // Use the $is_ajax variable
             'grandTotal' => number_format($grandTotal, 2)
         ],
         'updatedItemId' => $product_id,
-        'newItemQuantity' => $currentQuantity, // This will be 0 if item is removed
-        'itemRemoved' => !$itemExistsInCart && $new_quantity == 0 // Flag if item was removed due to quantity set to 0
+        'newItemQuantity' => $currentQuantity,
+        'itemRemoved' => !$itemExistsInCart && $new_quantity == 0
     ]);
     exit;
 }
 
-// Redirect back to the cart page for non-AJAX requests
 header("Location: ../../public/cart.php");
 exit;
-ob_end_clean(); 
 
-?>
+// Helper function
+function send_json_or_redirect($success, $message, $is_ajax) {
+    if ($is_ajax) {
+        ob_clean();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success, 'message' => $message]);
+        exit;
+    } else {
+        set_flash_message($success ? 'success' : 'error', $message);
+        header("Location: ../../public/cart.php");
+        exit;
+    }
+}

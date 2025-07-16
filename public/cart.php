@@ -1,11 +1,41 @@
 <?php
 
-// header('Content-Type: application/json');
-// echo json_encode(['status' => 'success', 'message' => 'Cart updated']);
-
 session_start();
 require_once '../includes/dbconfig.php';
-require_once '../includes/functions.php'; // For CSRF token
+require_once '../includes/functions.php';
+
+// Generate or retrieve visitor token
+if (!isset($_COOKIE['visitor_token'])) {
+    $visitor_token = bin2hex(random_bytes(16));
+    setcookie('visitor_token', $visitor_token, time() + (86400 * 30), "/"); // 30 days
+} else {
+    $visitor_token = $_COOKIE['visitor_token'];
+}
+
+// Load persistent cart from database
+$stmt = $mysqli->prepare("
+    SELECT fc.product_id, fc.quantity, p.name, p.price, p.image 
+    FROM forever_cart fc
+    JOIN products p ON fc.product_id = p.id
+    WHERE fc.visitor_token = ?
+");
+$stmt->bind_param("s", $visitor_token);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Update session cart
+$_SESSION['cart'] = [];
+
+while ($row = $result->fetch_assoc()) {
+    $product_id = $row['product_id'];
+    $_SESSION['cart'][$product_id] = [
+        'id' => $product_id,
+        'name' => $row['name'],
+        'price' => $row['price'],
+        'image' => $row['image'],
+        'quantity' => $row['quantity']
+    ];
+}
 
 
 // Generate CSRF token if not already set by functions.php
@@ -422,4 +452,44 @@ include '../includes/header.php';
             });
         }, 100);
     });
+
+
+    document.querySelectorAll('.update-qty').forEach(button => {
+    button.addEventListener('click', function () {
+        const productId = this.dataset.productId;
+        const action = this.dataset.action;
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+        fetch('../cart/update-cart-quantity.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `product_id=${productId}&action=${action}&csrf_token=${csrfToken}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update quantity on the page
+                document.getElementById(`qty-${productId}`).textContent = data.newItemQuantity;
+
+                // Update cart totals
+                document.getElementById('subtotal').textContent = data.totals.subtotal;
+                document.getElementById('tax').textContent = data.totals.tax;
+                document.getElementById('shipping').textContent = data.totals.shipping;
+                document.getElementById('grandTotal').textContent = data.totals.grandTotal;
+
+                // Optionally remove row if item deleted
+                if (data.itemRemoved) {
+                    document.getElementById(`cart-row-${productId}`).remove();
+                }
+            } else {
+                alert(data.message || "Failed to update cart.");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("An error occurred.");
+        });
+    });
+    });
+
 </script>

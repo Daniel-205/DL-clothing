@@ -58,17 +58,19 @@ if (isset($_GET['remove']) && is_numeric($_GET['remove'])) {
 $cartItems = $_SESSION['cart'] ?? [];
 $subtotal = 0;
 // Shipping and Tax Rates - these might come from config or db in a real app
-$shippingCost = 15; // Example fixed shipping
-$taxRate = 0.05;    // Example 5% tax rate
+// $shippingCost = 0; // Example fixed shipping
+// $taxRate = 0.05;    // Example 5% tax rate
 
 // Calculate subtotal
 foreach ($cartItems as $item) {
     $subtotal += $item['price'] * $item['quantity'];
 }
 
-$tax = $subtotal * $taxRate;
-$currentShipping = ($subtotal > 0 ? $shippingCost : 0);
-$grandTotal = $subtotal + $tax + $currentShipping;
+// $tax = $subtotal * $taxRate;
+// $currentShipping = ($subtotal > 0 ? $shippingCost : 0);
+
+// Calculate grand total
+$grandTotal = $subtotal;
 
 include '../includes/header.php';
 ?>
@@ -122,13 +124,13 @@ include '../includes/header.php';
                                                 </td>
                                                 <td data-label="Total" class="item-total">GHS <?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
                                                 <td data-label="Actions">
-                                                    <a href="cart.php?remove=<?php echo $productId; ?>" 
-                                                       class="text-danger btn-remove-item" 
-                                                       data-product-id="<?php echo $productId; ?>" 
-                                                       onclick="return confirmRemove('<?php echo htmlspecialchars(addslashes($item['name'])); ?>');">
+                                                    <button type="button" 
+                                                            class="text-danger btn-remove-item" 
+                                                            data-product-id="<?php echo $productId; ?>"
+                                                            data-product-name="<?php echo htmlspecialchars(addslashes($item['name'])); ?>">
                                                         <span class="d-none d-sm-inline">Remove</span>
                                                         <span class="d-sm-none">✕</span>
-                                                    </a>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -168,14 +170,14 @@ include '../includes/header.php';
                             <span class="text-gray-600">Subtotal</span>
                             <span class="cart-subtotal">GHS <?php echo number_format($subtotal, 2); ?></span>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
+                        <!-- <div class="d-flex justify-content-between mb-2">
                             <span class="text-gray-600">Delivery</span>
-                            <span class="cart-shipping">GHS <?php echo number_format($currentShipping, 2); ?></span>
+                            <span class="cart-shipping">GHS ?php echo number_format($currentShipping, 2); ?></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-gray-600">Tax (<?php echo ($taxRate * 100); ?>%)</span>
-                            <span class="cart-tax">GHS <?php echo number_format($tax, 2); ?></span>
-                        </div>
+                            <span class="text-gray-600">Tax (<php echo ($taxRate * 100); ?>%)</span>
+                            <span class="cart-tax">GHS ?php echo number_format($tax, 2); ?></span>
+                        </div> -->
 
                         <hr class="my-4">
 
@@ -220,6 +222,7 @@ include '../includes/header.php';
 <script>
     const csrfToken = '<?php echo $csrf_token; ?>';
     const updateCartUrl = '../admin/cart-logic/update-cart-quantity.php';
+    const removeCartUrl = '../admin/cart-logic/remove-from-cart.php';
 
     document.addEventListener('DOMContentLoaded', function () {
         const cartItemsContainer = document.querySelector('.cart-items');
@@ -239,6 +242,13 @@ include '../includes/header.php';
                     event.preventDefault();
                     const productId = target.dataset.productId;
                     updateCartQuantity(productId, action, target.closest('tr'));
+                } else if (target.classList.contains('btn-remove-item')) {
+                    event.preventDefault();
+                    const productId = target.dataset.productId;
+                    const productName = target.dataset.productName;
+                    if (confirm(`Are you sure you want to remove "${productName}" from your cart?`)) {
+                        removeCartItem(productId, target.closest('tr'));
+                    }
                 }
             });
         }
@@ -302,6 +312,46 @@ include '../includes/header.php';
             .catch(error => {
                 console.error('Error updating cart:', error);
                 displayCartMessage('Failed to update cart. Please try again.', 'error');
+            });
+        }
+
+        function removeCartItem(productId, tableRow) {
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('csrf_token', csrfToken);
+
+            fetch(removeCartUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayCartMessage(data.message, data.success ? 'success' : 'error');
+
+                if (data.success) {
+                    if (tableRow) {
+                        tableRow.remove();
+                    }
+                    if (document.querySelectorAll('.cart-items tr').length === 0 || 
+                        (document.querySelector('.cart-items tr.cart-empty') && 
+                            document.querySelectorAll('.cart-items tr:not(.cart-empty)').length === 0)) {
+                            if (!document.querySelector('.cart-items tr.cart-empty')) {
+                            const emptyRow = `<tr class="cart-empty"><td colspan="5" class="text-center py-5">Your cart is empty</td></tr>`;
+                            cartItemsContainer.innerHTML = emptyRow;
+                            }
+                    }
+                    // Update order summary
+                    if (data.totals) {
+                        document.querySelector('.cart-subtotal').textContent = 'GHS ' + data.totals.subtotal;
+                        document.querySelector('.cart-tax').textContent = 'GHS ' + data.totals.tax;
+                        document.querySelector('.cart-shipping').textContent = 'GHS ' + data.totals.shipping;
+                        document.querySelector('.cart-total').textContent = 'GHS ' + data.totals.grandTotal;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error removing item:', error);
+                displayCartMessage('Failed to remove item. Please try again.', 'error');
             });
         }
 

@@ -14,6 +14,7 @@ if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
 
 
 
+// Fetch cart data (from session or DB)
 $cart = $_SESSION['cart'] ?? [];
 $subtotal = 0;
 foreach ($cart as $item) {
@@ -129,9 +130,9 @@ $grandTotal = $subtotal
 </head>
 <body>
 
-    
-<div class="checkout-container">
-    
+
+  <div class="checkout-container">
+    <h2 class="text-2xl font-bold mb-4">Checkout</h2>
     <!-- Billing Details -->
     <div class="form-section">
       <h3>Billing Details</h3>
@@ -197,4 +198,4 @@ $grandTotal = $subtotal
 </html>
 
 
-<!-- <php require_once '../includes/footer.php'; ?> -->
+<?php require_once '../includes/footer.php'; ?>

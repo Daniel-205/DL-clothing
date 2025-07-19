@@ -221,8 +221,8 @@ include '../includes/header.php';
 <?php include '../includes/footer.php'; ?>
 <script>
     const csrfToken = '<?php echo $csrf_token; ?>';
-    const updateCartUrl = '../admin/cart-logic/update-cart-quantity.php';
-    const removeCartUrl = '../admin/cart-logic/remove-from-cart.php';
+    const updateCartUrl = '../../admin/cart-logic/update-cart-quantity.php';
+    const removeCartUrl = '../../admin/cart-logic/remove-from-cart.php';
 
     document.addEventListener('DOMContentLoaded', function () {
         const cartItemsContainer = document.querySelector('.cart-items');
@@ -291,8 +291,8 @@ include '../includes/header.php';
                         const totalSpan = tableRow.querySelector('.item-total');
                         
                         // Get the price from the DOM
-                        const priceText = tableRow.querySelector('.item-price').textContent;
-                        const itemPrice = parseFloat(priceText.replace(/[^0-9.-]+/g,""));
+                        const priceText = tableRow.querySelector(".item-price").textContent;
+                        const itemPrice = parseFloat(priceText.replace("GHS ", ""));
 
                         if (quantitySpan) quantitySpan.textContent = data.newItemQuantity;
                         if (totalSpan && !isNaN(itemPrice)) {
@@ -302,10 +302,11 @@ include '../includes/header.php';
                     
                     // Update order summary
                     if (data.totals) {
-                        document.querySelector('.cart-subtotal').textContent = 'GHS ' + data.totals.subtotal;
-                        document.querySelector('.cart-tax').textContent = 'GHS ' + data.totals.tax;
-                        document.querySelector('.cart-shipping').textContent = 'GHS ' + data.totals.shipping;
-                        document.querySelector('.cart-total').textContent = 'GHS ' + data.totals.grandTotal;
+                        const subtotalEl = document.querySelector('.cart-subtotal');
+                        const totalEl = document.querySelector('.cart-total');
+                        
+                        if (subtotalEl) subtotalEl.textContent = 'GHS ' + data.totals.subtotal;
+                        if (totalEl) totalEl.textContent = 'GHS ' + data.totals.grandTotal;
                     }
                 }
             })
@@ -342,10 +343,11 @@ include '../includes/header.php';
                     }
                     // Update order summary
                     if (data.totals) {
-                        document.querySelector('.cart-subtotal').textContent = 'GHS ' + data.totals.subtotal;
-                        document.querySelector('.cart-tax').textContent = 'GHS ' + data.totals.tax;
-                        document.querySelector('.cart-shipping').textContent = 'GHS ' + data.totals.shipping;
-                        document.querySelector('.cart-total').textContent = 'GHS ' + data.totals.grandTotal;
+                        const subtotalEl = document.querySelector(".cart-subtotal");
+                        const totalEl = document.querySelector(".cart-total");
+
+                        if (subtotalEl) subtotalEl.textContent = "GHS " + data.totals.subtotal;
+                        if (totalEl) totalEl.textContent = "GHS " + data.totals.grandTotal;
                     }
                 }
             })

@@ -221,33 +221,28 @@ include '../includes/header.php';
 <?php include '../includes/footer.php'; ?>
 <script>
     const csrfToken = '<?php echo $csrf_token; ?>';
-    const updateCartUrl = '../../admin/cart-logic/update-cart-quantity.php';
-    const removeCartUrl = '../../admin/cart-logic/remove-from-cart.php';
+    const updateCartUrl = '../admin/cart-logic/update-cart-quantity.php';
+    const removeCartUrl = '../admin/cart-logic/remove-from-cart.php';
 
     document.addEventListener('DOMContentLoaded', function () {
         const cartItemsContainer = document.querySelector('.cart-items');
-        
+
         if (cartItemsContainer) {
-            cartItemsContainer.addEventListener('click', function(event) {
-                const target = event.target;
-                let action = null;
+            cartItemsContainer.addEventListener('click', function (event) {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const productId = target.dataset.productId;
+                const tableRow = target.closest('tr');
 
                 if (target.classList.contains('btn-quantity-increase')) {
-                    action = 'increase';
+                    updateCartQuantity(productId, 'increase', tableRow);
                 } else if (target.classList.contains('btn-quantity-decrease')) {
-                    action = 'decrease';
-                }
-
-                if (action) {
-                    event.preventDefault();
-                    const productId = target.dataset.productId;
-                    updateCartQuantity(productId, action, target.closest('tr'));
+                    updateCartQuantity(productId, 'decrease', tableRow);
                 } else if (target.classList.contains('btn-remove-item')) {
-                    event.preventDefault();
-                    const productId = target.dataset.productId;
                     const productName = target.dataset.productName;
                     if (confirm(`Are you sure you want to remove "${productName}" from your cart?`)) {
-                        removeCartItem(productId, target.closest('tr'));
+                        removeCartItem(productId, tableRow);
                     }
                 }
             });
@@ -263,51 +258,27 @@ include '../includes/header.php';
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(res => res.json())
             .then(data => {
                 displayCartMessage(data.message, data.success ? 'success' : 'error');
 
                 if (data.success) {
                     if (data.itemRemoved || (data.newItemQuantity !== undefined && data.newItemQuantity <= 0)) {
-                        if (tableRow) {
-                            tableRow.remove();
-                        }
-                        // Check if cart is now empty
-                        if (document.querySelectorAll('.cart-items tr').length === 0 || 
-                            (document.querySelector('.cart-items tr.cart-empty') && 
-                             document.querySelectorAll('.cart-items tr:not(.cart-empty)').length === 0)) {
-                             if (!document.querySelector('.cart-items tr.cart-empty')) {
-                                const emptyRow = `<tr class="cart-empty"><td colspan="5" class="text-center py-5">Your cart is empty</td></tr>`;
-                                cartItemsContainer.innerHTML = emptyRow;
-                             }
-                        }
+                        if (tableRow) tableRow.remove();
+                        checkCartEmpty();
                     } else if (tableRow && data.updatedItemId == productId) {
                         const quantitySpan = tableRow.querySelector('.item-quantity');
                         const totalSpan = tableRow.querySelector('.item-total');
-                        
-                        // Get the price from the DOM
-                        const priceText = tableRow.querySelector(".item-price").textContent;
+                        const priceText = tableRow.querySelector('.item-price').textContent;
                         const itemPrice = parseFloat(priceText.replace("GHS ", ""));
 
                         if (quantitySpan) quantitySpan.textContent = data.newItemQuantity;
                         if (totalSpan && !isNaN(itemPrice)) {
-                             totalSpan.textContent = 'GHS ' + (itemPrice * data.newItemQuantity).toFixed(2);
+                            totalSpan.textContent = 'GHS ' + (itemPrice * data.newItemQuantity).toFixed(2);
                         }
                     }
-                    
-                    // Update order summary
-                    if (data.totals) {
-                        const subtotalEl = document.querySelector('.cart-subtotal');
-                        const totalEl = document.querySelector('.cart-total');
-                        
-                        if (subtotalEl) subtotalEl.textContent = 'GHS ' + data.totals.subtotal;
-                        if (totalEl) totalEl.textContent = 'GHS ' + data.totals.grandTotal;
-                    }
+
+                    updateOrderSummary(data.totals);
                 }
             })
             .catch(error => {
@@ -325,30 +296,23 @@ include '../includes/header.php';
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(response => response.text())
+            .then(raw => {
+                console.log("Remove response:", raw);
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    displayCartMessage("Unexpected server response. Please refresh.", 'error');
+                    return;
+                }
+
                 displayCartMessage(data.message, data.success ? 'success' : 'error');
 
                 if (data.success) {
-                    if (tableRow) {
-                        tableRow.remove();
-                    }
-                    if (document.querySelectorAll('.cart-items tr').length === 0 || 
-                        (document.querySelector('.cart-items tr.cart-empty') && 
-                            document.querySelectorAll('.cart-items tr:not(.cart-empty)').length === 0)) {
-                            if (!document.querySelector('.cart-items tr.cart-empty')) {
-                            const emptyRow = `<tr class="cart-empty"><td colspan="5" class="text-center py-5">Your cart is empty</td></tr>`;
-                            cartItemsContainer.innerHTML = emptyRow;
-                            }
-                    }
-                    // Update order summary
-                    if (data.totals) {
-                        const subtotalEl = document.querySelector(".cart-subtotal");
-                        const totalEl = document.querySelector(".cart-total");
-
-                        if (subtotalEl) subtotalEl.textContent = "GHS " + data.totals.subtotal;
-                        if (totalEl) totalEl.textContent = "GHS " + data.totals.grandTotal;
-                    }
+                    if (tableRow) tableRow.remove();
+                    checkCartEmpty();
+                    updateOrderSummary(data.totals);
                 }
             })
             .catch(error => {
@@ -357,17 +321,34 @@ include '../includes/header.php';
             });
         }
 
+        function updateOrderSummary(totals) {
+            if (totals) {
+                const subtotalEl = document.querySelector('.cart-subtotal');
+                const totalEl = document.querySelector('.cart-total');
+
+                if (subtotalEl) subtotalEl.textContent = 'GHS ' + totals.subtotal;
+                if (totalEl) totalEl.textContent = 'GHS ' + totals.grandTotal;
+            }
+        }
+
+        function checkCartEmpty() {
+            const cartItemsContainer = document.querySelector('.cart-items');
+            if (cartItemsContainer.querySelectorAll('tr:not(.cart-empty)').length === 0) {
+                cartItemsContainer.innerHTML = `<tr class="cart-empty"><td colspan="5" class="text-center py-5">Your cart is empty</td></tr>`;
+            }
+        }
+
         function displayCartMessage(message, type = 'info') {
             const messageArea = document.getElementById('cart-message-area');
             if (!messageArea) return;
 
             const alertClass = type === 'success' ? 'alert-success' : (type === 'error' ? 'alert-danger' : 'alert-info');
-            messageArea.innerHTML = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>`;
-            
-            // Auto-dismiss after 5 seconds
+            messageArea.innerHTML = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+
             setTimeout(() => {
                 const alert = messageArea.querySelector('.alert');
                 if (alert) {
@@ -376,39 +357,19 @@ include '../includes/header.php';
                 }
             }, 5000);
         }
-    });
 
-    function confirmRemove(itemName) { // Keep existing remove confirmation
-        return confirm(`Are you sure you want to remove "${itemName}" from your cart?`);
-    }
-
-    function validateCheckout() {
-        const checkbox = document.getElementById('agreeTerms');
-        if (!checkbox.checked) {
-            alert('Please agree to the terms and conditions before proceeding.');
-            return false;
-        }
-        return true;
-    }
-
-    // Add smooth animations on scroll
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
+        // Animations and style injections
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
         });
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.fade-in').forEach(el => {
-            observer.observe(el);
-        });
-    });
-    // Add CSS for responsive styling and animations
-    document.addEventListener('DOMContentLoaded', function() {
-        // Create and apply additional styles for mobile responsiveness and animations
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
         const styleElement = document.createElement('style');
         styleElement.textContent = `
             .btn-quantity-increase.clicked,
@@ -417,21 +378,21 @@ include '../includes/header.php';
                 color: white !important;
                 transform: scale(0.95);
             }
-            
-            .btn-quantity-increase, 
+
+            .btn-quantity-increase,
             .btn-quantity-decrease {
                 transition: all 0.2s ease;
                 background-color: #f8f9fa;
                 border: 1px solid #dee2e6;
             }
-            
-            .btn-quantity-increase:hover, 
+
+            .btn-quantity-increase:hover,
             .btn-quantity-decrease:hover {
                 background-color: #1C1C1C;
                 color: white;
                 border-color: #1C1C1C;
             }
-            
+
             @media (max-width: 767.98px) {
                 .table td {
                     display: block;
@@ -440,7 +401,7 @@ include '../includes/header.php';
                     border-top: none;
                     position: relative;
                 }
-                
+
                 .table td:before {
                     content: attr(data-label);
                     font-weight: 600;
@@ -450,53 +411,47 @@ include '../includes/header.php';
                     text-transform: uppercase;
                     color: #1C1C1C;
                 }
-                
+
                 .table tr {
                     border-bottom: 1px solid #dee2e6;
                     display: block;
                     margin-bottom: 1rem;
                     padding-bottom: 1rem;
                 }
-                
+
                 .quantity-controls {
                     justify-content: flex-start;
                 }
-                
+
                 .card {
                     margin-bottom: 1rem;
                 }
             }
-            
-            /* Fade in animation for elements */
+
             .fade-in {
                 opacity: 0;
                 transform: translateY(20px);
                 transition: opacity 0.5s ease, transform 0.5s ease;
             }
-            
-            /* Hover lift effect */
+
             .hover-lift {
                 transition: transform 0.3s ease, box-shadow 0.3s ease;
             }
-            
+
             .hover-lift:hover {
                 transform: translateY(-3px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             }
         `;
         document.head.appendChild(styleElement);
-        
-        // Add click effects to quantity buttons
+
         document.querySelectorAll('.btn-quantity-increase, .btn-quantity-decrease').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 this.classList.add('clicked');
-                setTimeout(() => {
-                    this.classList.remove('clicked');
-                }, 150);
+                setTimeout(() => this.classList.remove('clicked'), 150);
             });
         });
-        
-        // Trigger fade-in for elements with the fade-in class
+
         setTimeout(() => {
             document.querySelectorAll('.fade-in').forEach(el => {
                 el.style.opacity = '1';
@@ -504,44 +459,4 @@ include '../includes/header.php';
             });
         }, 100);
     });
-
-
-    document.querySelectorAll('.update-qty').forEach(button => {
-    button.addEventListener('click', function () {
-        const productId = this.dataset.productId;
-        const action = this.dataset.action;
-        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-
-        fetch('../cart/update-cart-quantity.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `product_id=${productId}&action=${action}&csrf_token=${csrfToken}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update quantity on the page
-                document.getElementById(`qty-${productId}`).textContent = data.newItemQuantity;
-
-                // Update cart totals
-                document.getElementById('subtotal').textContent = data.totals.subtotal;
-                document.getElementById('tax').textContent = data.totals.tax;
-                document.getElementById('shipping').textContent = data.totals.shipping;
-                document.getElementById('grandTotal').textContent = data.totals.grandTotal;
-
-                // Optionally remove row if item deleted
-                if (data.itemRemoved) {
-                    document.getElementById(`cart-row-${productId}`).remove();
-                }
-            } else {
-                alert(data.message || "Failed to update cart.");
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert("An error occurred.");
-        });
-    });
-    });
-
 </script>

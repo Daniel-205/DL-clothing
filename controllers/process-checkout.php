@@ -5,8 +5,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-require_once '../includes/dbconfig.php';  // your DB connection
-require_once '../includes/functions.php'; // for set_flash_message, etc.
+require_once '../includes/dbconfig.php';  
+require_once '../includes/functions.php'; 
+
 
 // Step 1: Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -124,9 +125,7 @@ if ($stmt->execute()) {
         . "*Address:* $address\n"
         // . "*Order Code:* $order_code\n"
         . "*Order Total:* GHS " . number_format($order_total, 2) . "\n\n"
-        . "*Items:*\n"
-        . "*Thanks for your purchase! Your order will be delivered shortly. Stay tuned! *\n";
-
+        . "*Items:*\n";
 
     foreach ($cart as $item) {
         $message .= "- {$item['name']} x {$item['quantity']} = GHS " 

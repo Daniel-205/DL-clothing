@@ -1,4 +1,9 @@
 <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_start();
 require_once '../includes/dbconfig.php';  // your DB connection
 require_once '../includes/functions.php'; // for set_flash_message, etc.
@@ -40,14 +45,46 @@ if (empty($cart)) {
 
 // Step 4: Calculate total
 $order_total = 0;
-foreach ($cart as $item) {
+foreach ($cart as $product_id => $item) {
     $order_total += $item['price'] * $item['quantity'];
 }
 
 // Step 5: Generate order code
 $order_code = strtoupper(uniqid('ORD'));
 
-// Step 6: Insert into orders table
+// Step 6: Check if tables exist and create them if they don't
+$mysqli->query("
+CREATE TABLE IF NOT EXISTS `orders` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `visitor_token` varchar(64) NOT NULL,
+  `order_code` varchar(32) NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `phone` varchar(50) NOT NULL,
+  `address` text NOT NULL,
+  `order_total` decimal(10,2) NOT NULL,
+  `status` enum('pending','processing','completed','cancelled') NOT NULL DEFAULT 'pending',
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_code` (`order_code`),
+  KEY `visitor_token` (`visitor_token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+$mysqli->query("
+CREATE TABLE IF NOT EXISTS `order_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `order_id` (`order_id`),
+  KEY `product_id` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+");
+
+// Insert into orders table
 $stmt = $mysqli->prepare("
     INSERT INTO orders 
     (visitor_token, order_code, full_name, email, phone, address, order_total, status, created_at) 
@@ -99,7 +136,7 @@ if ($stmt->execute()) {
     setcookie('visitor_token', $visitor_token, time() + (86400 * 30), "/");
 
     // Step 10: Redirect to WhatsApp
-    $whatsappNumber = "233240123456"; // replace with your number
+    $whatsappNumber = "233544125283"; // replace with your number
     $encodedMessage = urlencode($message);
     $whatsappUrl = "https://wa.me/$whatsappNumber?text=$encodedMessage";
 

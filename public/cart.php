@@ -260,7 +260,10 @@ include '../includes/header.php';
             })
             .then(res => res.json())
             .then(data => {
-                displayCartMessage(data.message, data.success ? 'success' : 'error');
+                // Don't show error messages when successful
+                if (!data.success) {
+                    displayCartMessage(data.message, 'error');
+                }
 
                 if (data.success) {
                     if (data.itemRemoved || (data.newItemQuantity !== undefined && data.newItemQuantity <= 0)) {
@@ -296,18 +299,12 @@ include '../includes/header.php';
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.text())
-            .then(raw => {
-                console.log("Remove response:", raw);
-                let data;
-                try {
-                    data = JSON.parse(raw);
-                } catch (e) {
-                    displayCartMessage("Unexpected server response. Please refresh.", 'error');
-                    return;
+            .then(response => response.json()) // Changed from text() to json() directly
+            .then(data => {
+                // Only show error messages, not success messages
+                if (!data.success) {
+                    displayCartMessage(data.message, 'error');
                 }
-
-                displayCartMessage(data.message, data.success ? 'success' : 'error');
 
                 if (data.success) {
                     if (tableRow) tableRow.remove();

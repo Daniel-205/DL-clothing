@@ -127,11 +127,16 @@ $grandTotal = $subtotal;
   <!-- Billing Details -->
   <div class="form-section">
     <h3>Billing Details</h3>
-    <form action="../controllers/process-checkout.php" method="post">
+    <form action="controllers/process-checkout.php" method="post">
       <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
       <div class="form-group">
-        <label for="fname">First Name</label>
-        <input type="text" id="fname" name="first_name" required>
+        <label for="fname">Full Name</label>
+        <input type="text" id="fname" name="full_name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required>
       </div>
 
       <div class="form-group">

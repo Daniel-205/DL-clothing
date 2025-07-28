@@ -117,14 +117,16 @@ if ($stmt->execute()) {
     }
 
     // Step 8: Prepare WhatsApp message
-    $message = "🛒 *New Order Received!*\n"
+    $message = " *New Order Received!*\n"
         . "*Name:* $full_name\n"
-        . "*Email:* $email\n"
+        // . "*Email:* $email\n"
         . "*Phone:* $phone\n"
         . "*Address:* $address\n"
-        . "*Order Code:* $order_code\n"
+        // . "*Order Code:* $order_code\n"
         . "*Order Total:* GHS " . number_format($order_total, 2) . "\n\n"
-        . "*Items:*\n";
+        . "*Items:*\n"
+        . "*Thanks for your purchase! Your order will be delivered shortly. Stay tuned! *\n";
+
 
     foreach ($cart as $item) {
         $message .= "- {$item['name']} x {$item['quantity']} = GHS " 

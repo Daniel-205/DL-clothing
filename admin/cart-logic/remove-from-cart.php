@@ -52,6 +52,13 @@ if (!$stmt->execute()) {
 // Recalculate the cart totals after removal.
 $totals = calculate_cart_totals($_SESSION['cart'] ?? []);
 
+// Manually calculate total items since we can't modify the helper function.
+$totalItems = 0;
+foreach ($_SESSION['cart'] as $item) {
+    $totalItems += $item['quantity'];
+}
+$totals['totalItems'] = $totalItems;
+
 // The JavaScript expects a `totals` object in the response to update the summary.
 $response_data = ['totals' => $totals];
 

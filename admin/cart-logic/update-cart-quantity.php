@@ -97,6 +97,14 @@ if (!$stmt->execute()) {
 // Calculate the new totals for the entire cart.
 $totals = calculate_cart_totals($_SESSION['cart']);
 
+// Manually calculate total items since we can't modify the helper function.
+$totalItems = 0;
+foreach ($_SESSION['cart'] as $item) {
+    $totalItems += $item['quantity'];
+}
+$totals['totalItems'] = $totalItems;
+
+
 // Prepare the data payload for the JSON response.
 $response_data = [
     'newQuantity' => $item_removed ? 0 : $new_quantity,

@@ -76,6 +76,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
             updateOrderSummary(totals);
+            // The updateCartIcon function is now global in main.js
+            if (typeof updateCartIcon === 'function') {
+                updateCartIcon(totals.totalItems);
+            }
         })
         .catch(error => {
             console.error('Error:', error);
@@ -108,6 +112,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (tableRow) tableRow.remove();
                 checkCartEmpty();
                 updateOrderSummary(data.data.totals);
+                // The updateCartIcon function is now global in main.js
+                if (typeof updateCartIcon === 'function') {
+                    updateCartIcon(data.data.totals.totalItems);
+                }
             }
         })
         .catch(error => {

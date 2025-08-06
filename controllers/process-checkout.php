@@ -1,13 +1,11 @@
 <?php
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
 require_once '../includes/dbconfig.php';  
-require_once '../includes/functions.php'; 
-
+require_once '../includes/functions.php';  
 
 // Step 1: Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -53,7 +51,7 @@ foreach ($cart as $product_id => $item) {
 // Step 5: Generate order code
 $order_code = strtoupper(uniqid('ORD'));
 
-// Step 6: Check if tables exist and create them if they don't
+// Step 6: Ensure required tables exist
 $mysqli->query("
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -85,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ");
 
-// Insert into orders table
+// Step 7: Insert order into database
 $stmt = $mysqli->prepare("
     INSERT INTO orders 
     (visitor_token, order_code, full_name, email, phone, address, order_total, status, created_at) 
@@ -106,24 +104,21 @@ $stmt->bind_param(
 if ($stmt->execute()) {
     $order_id = $stmt->insert_id;
 
-    // Step 7: Insert into order_items
+    // Step 8: Insert order items
     $insert_item = $mysqli->prepare("
         INSERT INTO order_items (order_id, product_id, quantity, price) 
         VALUES (?, ?, ?, ?)
     ");
-
     foreach ($cart as $product_id => $item) {
         $insert_item->bind_param("iiid", $order_id, $product_id, $item['quantity'], $item['price']);
         $insert_item->execute();
     }
 
-    // Step 8: Prepare WhatsApp message
+    // Step 9: WhatsApp message
     $message = " *New Order Received!*\n"
         . "*Name:* $full_name\n"
-        // . "*Email:* $email\n"
         . "*Phone:* $phone\n"
         . "*Address:* $address\n"
-        // . "*Order Code:* $order_code\n"
         . "*Order Total:* GHS " . number_format($order_total, 2) . "\n\n"
         . "*Items:*\n";
 
@@ -132,21 +127,24 @@ if ($stmt->execute()) {
             . number_format($item['price'] * $item['quantity'], 2) . "\n";
     }
 
-    // Step 9: Clear cart
+    // Step 10: Clear cart (session + database)
     unset($_SESSION['cart']);
     setcookie('visitor_token', $visitor_token, time() + (86400 * 30), "/");
 
-    // Step 10: Redirect to WhatsApp
-    $whatsappNumber = "233544125283"; // replace with your number
+    $deleteCart = $mysqli->prepare("DELETE FROM forever_cart WHERE visitor_token = ?");
+    $deleteCart->bind_param("s", $visitor_token);
+    $deleteCart->execute();
+
+    // Step 11: Redirect to WhatsApp
+    $whatsappNumber = "233544125283"; // Replace with your number
     $encodedMessage = urlencode($message);
     $whatsappUrl = "https://wa.me/$whatsappNumber?text=$encodedMessage";
-
     header("Location: $whatsappUrl");
     exit;
 
 } else {
-    // On DB error
     set_flash_message('error', 'Something went wrong. Please try again.');
     header("Location: ../checkout.php");
     exit;
 }
+?>

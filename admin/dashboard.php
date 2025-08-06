@@ -232,6 +232,7 @@ $result = $mysqli->query($sql);
   <div class="dashboard-container">
     <h1>Manage Products</h1>
     <a href="addproduct.php" class="btn-edit">Add New product</a>
+    <a href="orders.php" class="btn-edit">Orders</a>
     <a href="logout.php" class="btn-back">logout</a>
     <table class="product-table">
       <thead>

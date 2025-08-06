@@ -207,9 +207,9 @@ include '../includes/header.php';
                         <p class="text-muted mb-3 small">We use secure encryption for all transactions</p>
                         <div class="payment-methods d-flex gap-2 flex-wrap justify-content-center">
                             <!-- Payment method icons will be loaded here -->
-                            <div class="payment-icon-placeholder bg-light rounded p-2" style="width: 60px; height: 40px;"></div>
-                            <div class="payment-icon-placeholder bg-light rounded p-2" style="width: 60px; height: 40px;"></div>
-                            <div class="payment-icon-placeholder bg-light rounded p-2" style="width: 60px; height: 40px;"></div>
+                            <img src=""  class="payment-icon-placeholder bg-light rounded p-2" style="width: 60px; height: 40px;">
+                            <img src="./public/assert/image/telecelCash.png"  class="payment-icon-placeholder bg-light rounded p-2" style="width: 60px; height: 40px;">
+                            <img src="./public/assert/image/tigo-cash-airtel-money.jpg"  class="payment-icon-placeholder bg-light rounded p-2" style="width: 60px; height: 40px;">
                         </div>
                     </div>
                 </div>
@@ -248,46 +248,68 @@ include '../includes/header.php';
             });
         }
 
+            // Update the updateCartQuantity function
         function updateCartQuantity(productId, action, tableRow) {
-            const formData = new FormData();
-            formData.append('product_id', productId);
-            formData.append('action', action);
-            formData.append('csrf_token', csrfToken);
+            const buttons = tableRow.querySelectorAll('.btn-quantity-increase, .btn-quantity-decrease');
+            buttons.forEach(btn => btn.disabled = true);
 
             fetch(updateCartUrl, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    product_id: productId,
+                    action: action,
+                    csrf_token: csrfToken
+                })
             })
-            .then(res => res.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
             .then(data => {
-                // Don't show error messages when successful
                 if (!data.success) {
-                    displayCartMessage(data.message, 'error');
+                    throw new Error(data.message || 'Update failed');
                 }
 
-                if (data.success) {
-                    if (data.itemRemoved || (data.newItemQuantity !== undefined && data.newItemQuantity <= 0)) {
-                        if (tableRow) tableRow.remove();
-                        checkCartEmpty();
-                    } else if (tableRow && data.updatedItemId == productId) {
-                        const quantitySpan = tableRow.querySelector('.item-quantity');
-                        const totalSpan = tableRow.querySelector('.item-total');
-                        const priceText = tableRow.querySelector('.item-price').textContent;
-                        const itemPrice = parseFloat(priceText.replace("GHS ", ""));
-
-                        if (quantitySpan) quantitySpan.textContent = data.newItemQuantity;
-                        if (totalSpan && !isNaN(itemPrice)) {
-                            totalSpan.textContent = 'GHS ' + (itemPrice * data.newItemQuantity).toFixed(2);
-                        }
+                const { newQuantity, itemRemoved, totals } = data.data;
+                
+                if (itemRemoved) {
+                    tableRow.remove();
+                    checkCartEmpty();
+                } else {
+                    // Update quantity display
+                    const quantitySpan = tableRow.querySelector('.item-quantity');
+                    const totalSpan = tableRow.querySelector('.item-total');
+                    const priceText = tableRow.querySelector('.item-price').textContent;
+                    const itemPrice = parseFloat(priceText.replace("GHS ", ""));
+                    
+                    if (quantitySpan) quantitySpan.textContent = newQuantity;
+                    if (totalSpan) {
+                        totalSpan.textContent = 'GHS ' + (itemPrice * newQuantity).toFixed(2);
                     }
-
-                    updateOrderSummary(data.totals);
                 }
+
+                // Update order summary
+                updateOrderSummary(totals);
             })
             .catch(error => {
-                console.error('Error updating cart:', error);
-                displayCartMessage('Failed to update cart. Please try again.', 'error');
+                console.error('Error:', error);
+                displayCartMessage(error.message || 'Failed to update cart', 'error');
+            })
+            .finally(() => {
+                buttons.forEach(btn => btn.disabled = false);
             });
+        }
+
+        // Update the updateOrderSummary function
+        function updateOrderSummary(totals) {
+            const subtotalEl = document.querySelector('.cart-subtotal');
+            const totalEl = document.querySelector('.cart-total');
+
+            if (subtotalEl) subtotalEl.textContent = 'GHS ' + totals.subtotal.toFixed(2);
+            if (totalEl) totalEl.textContent = 'GHS ' + totals.grandTotal.toFixed(2);
         }
 
         function removeCartItem(productId, tableRow) {

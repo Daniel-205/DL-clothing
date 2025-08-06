@@ -1,11 +1,90 @@
 <?php
-ob_start(); // Start output buffering
-ini_set('display_errors', 0);
+// ob_start(); // Start output buffering
+// ini_set('display_errors', 0);
 
 session_start();
+<?php
 require_once '../../includes/dbconfig.php';
 require_once '../../includes/functions.php';
 
+// Start secure session
+secure_session_start();
+
+// Verify AJAX request
+if (!is_ajax_request()) {
+    send_json_response(false, 'Invalid request');
+}
+
+// CSRF Protection
+if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+    send_json_response(false, 'CSRF token validation failed');
+}
+
+// Get visitor token
+$visitor_token = get_or_create_visitor_token();
+
+// Validate inputs
+$product_id = sanitize_int($_POST['product_id'] ?? 0);
+$action = sanitize_string($_POST['action'] ?? '');
+
+if (!$product_id || !in_array($action, ['increase', 'decrease'])) {
+    send_json_response(false, 'Invalid parameters');
+}
+
+// Initialize cart if not exists
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
+}
+
+// Check product exists in cart
+if (!isset($_SESSION['cart'][$product_id])) {
+    send_json_response(false, 'Product not found in cart');
+}
+
+// Update quantity
+$current_quantity = $_SESSION['cart'][$product_id]['quantity'];
+$new_quantity = $current_quantity;
+
+if ($action === 'increase') {
+    $new_quantity++;
+} else {
+    $new_quantity--;
+    
+    // Remove if quantity reaches 0
+    if ($new_quantity <= 0) {
+        unset($_SESSION['cart'][$product_id]);
+        $item_removed = true;
+    }
+}
+
+// Update session and database
+if (isset($item_removed)) {
+    // Remove from DB
+    $stmt = $mysqli->prepare("DELETE FROM forever_cart WHERE visitor_token = ? AND product_id = ?");
+    $stmt->bind_param("si", $visitor_token, $product_id);
+} else {
+    // Update quantity in DB
+    $_SESSION['cart'][$product_id]['quantity'] = $new_quantity;
+    $stmt = $mysqli->prepare("
+        INSERT INTO forever_cart (visitor_token, product_id, quantity, last_updated)
+        VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), last_updated = NOW()
+    ");
+    $stmt->bind_param("sii", $visitor_token, $product_id, $new_quantity);
+}
+
+if (!$stmt->execute()) {
+    send_json_response(false, 'Database update failed');
+}
+
+// Prepare response
+$response = [
+    'newQuantity' => $new_quantity,
+    'itemRemoved' => $item_removed ?? false,
+    'totals' => calculate_cart_totals($_SESSION['cart'])
+];
+
+send_json_response(true, 'Cart updated successfully', $response);
 $is_ajax = is_ajax_request();
 
 // CSRF Protection

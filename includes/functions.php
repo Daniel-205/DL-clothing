@@ -499,4 +499,41 @@ function get_or_create_visitor_token() {
 }
 
 
+
+/**
+ * Standardized JSON response for AJAX requests
+ */
+function send_json_response($success, $message = '', $data = []) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => $success,
+        'message' => $message,
+        'data' => $data
+    ]);
+    exit;
+}
+
+/**
+ * Calculate cart totals
+ */
+function calculate_cart_totals($cart_items) {
+    $subtotal = 0;
+    foreach ($cart_items as $item) {
+        $subtotal += $item['price'] * $item['quantity'];
+    }
+    
+    $tax_rate = 0.00; // 0% tax
+    $shipping = $subtotal > 0 ? 15 : 0;
+    $tax = $subtotal * $tax_rate;
+    $grand_total = $subtotal + $tax + $shipping;
+    
+    return [
+        'subtotal' => $subtotal,
+        'tax' => $tax,
+        'shipping' => $shipping,
+        'grandTotal' => $grand_total
+    ];
+}
+
+
 ?>

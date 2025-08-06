@@ -6,6 +6,9 @@ if (session_status() == PHP_SESSION_NONE) {
 
 require_once '../includes/functions.php';
 
+// Ensure a CSRF token is generated for all pages.
+$csrf_token = generate_csrf_token();
+
 // Calculate total items in cart
 $totalCartItems = 0;
 if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
@@ -36,18 +39,18 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
         .side-cart {
             position: fixed;
             top: 0;
-            left: -350px; /* Start off-screen */
+            right: -350px; /* Start off-screen */
             width: 350px;
             height: 100%;
             background-color: #fff;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            transition: left 0.3s ease-in-out;
+            transition: right 0.3s ease-in-out;
             z-index: 1050;
             display: flex;
             flex-direction: column;
         }
         .side-cart.open {
-            left: 0;
+            right: 0;
         }
         .side-cart-header {
             padding: 1rem;

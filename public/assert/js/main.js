@@ -29,7 +29,10 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(form);
-            formData.append('csrf_token', getCsrfToken());
+            
+            // Get CSRF token from meta tag and append to form data
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            formData.append('csrf_token', csrfToken);
 
             fetch('../admin/cart-logic/add-to-cart.php', {
                 method: 'POST',
@@ -89,14 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
         sideCartSubtotal.textContent = `GHS ${subtotal.toFixed(2)}`;
     }
 });
-
-function getCsrfToken() {
-    // This is a placeholder. We need to implement a way to get the CSRF token.
-    // The best way is to have it in a meta tag in the header.
-    // Let's assume we will add this to header.php
-    const tokenEl = document.querySelector('meta[name="csrf-token"]');
-    return tokenEl ? tokenEl.getAttribute('content') : '';
-}
 
 function updateCartIcon(totalItems) {
     const cartCount = document.querySelector('.cart-count');

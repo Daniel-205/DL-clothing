@@ -26,14 +26,14 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
         <div class="row mb-5">
             <div class="col-lg-6 mx-auto text-center">
                 <h1 class="display-5 mb-4">Discover Our T-Shirts</h1>
-                <form class="d-flex">
+                <!-- <form class="d-flex">
                     <input type="text" name="search" 
                            class="form-control search-box py-3 px-4" 
                            placeholder="Search by style, color...">
                     <button class="btn btn-primary search-btn px-4" type="submit">
                         <i class="bi bi-search"></i> Search
                     </button>
-                </form>
+                </form> -->
             </div>
         </div>
 

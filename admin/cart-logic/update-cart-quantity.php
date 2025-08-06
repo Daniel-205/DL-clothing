@@ -1,70 +1,82 @@
 <?php
-// ob_start(); // Start output buffering
-// ini_set('display_errors', 0);
-
 session_start();
-<?php
+
+// This file is the single source of truth for AJAX updates to the cart quantity.
+// It handles increasing, decreasing, and removing items from the cart.
+
 require_once '../../includes/dbconfig.php';
 require_once '../../includes/functions.php';
 
-// Start secure session
-secure_session_start();
+// We don't need secure_session_start() as session_start() is sufficient here
+// and the function is not defined anywhere.
 
-// Verify AJAX request
+// Verify this is a legitimate AJAX request.
 if (!is_ajax_request()) {
-    send_json_response(false, 'Invalid request');
+    // Respond with an error and exit if it's not an AJAX request.
+    send_json_response(false, 'Invalid request type.');
 }
 
-// CSRF Protection
+// Protect against Cross-Site Request Forgery.
 if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
-    send_json_response(false, 'CSRF token validation failed');
+    send_json_response(false, 'CSRF token validation failed. Please refresh and try again.');
 }
 
-// Get visitor token
+// Get a unique token for the visitor's device to manage their cart.
 $visitor_token = get_or_create_visitor_token();
 
-// Validate inputs
-$product_id = sanitize_int($_POST['product_id'] ?? 0);
-$action = sanitize_string($_POST['action'] ?? '');
+// Sanitize and validate the product ID and action from the POST request.
+// Use filter_input for security, as it's more robust than custom functions.
+$product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
+$action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_FULL_SPECIAL_CHARS); // A safer filter
 
+// Ensure the parameters are valid before proceeding.
 if (!$product_id || !in_array($action, ['increase', 'decrease'])) {
-    send_json_response(false, 'Invalid parameters');
+    send_json_response(false, 'Invalid product or action specified.');
 }
 
-// Initialize cart if not exists
+// Initialize the cart in the session if it doesn't already exist.
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
-// Check product exists in cart
+// Check if the product is actually in the cart before trying to update it.
 if (!isset($_SESSION['cart'][$product_id])) {
-    send_json_response(false, 'Product not found in cart');
+    send_json_response(false, 'The product you are trying to update is not in your cart.');
 }
 
-// Update quantity
+// --- Core Quantity Update Logic ---
+
 $current_quantity = $_SESSION['cart'][$product_id]['quantity'];
 $new_quantity = $current_quantity;
+$item_removed = false;
 
 if ($action === 'increase') {
+    // Increment the quantity. Add checks for stock limits here if needed.
     $new_quantity++;
-} else {
+} else { // action === 'decrease'
+    // Decrement the quantity.
     $new_quantity--;
-    
-    // Remove if quantity reaches 0
-    if ($new_quantity <= 0) {
-        unset($_SESSION['cart'][$product_id]);
-        $item_removed = true;
-    }
 }
 
-// Update session and database
-if (isset($item_removed)) {
-    // Remove from DB
+// If quantity drops to zero or below, remove the item from the cart.
+if ($new_quantity <= 0) {
+    unset($_SESSION['cart'][$product_id]);
+    $item_removed = true;
+} else {
+    // Otherwise, update the quantity in the session.
+    $_SESSION['cart'][$product_id]['quantity'] = $new_quantity;
+}
+
+// --- Database Synchronization ---
+
+// Use a prepared statement to prevent SQL injection.
+if ($item_removed) {
+    // If the item was removed from the cart, delete it from the persistent database cart.
     $stmt = $mysqli->prepare("DELETE FROM forever_cart WHERE visitor_token = ? AND product_id = ?");
     $stmt->bind_param("si", $visitor_token, $product_id);
 } else {
-    // Update quantity in DB
-    $_SESSION['cart'][$product_id]['quantity'] = $new_quantity;
+    // If the quantity was updated, insert or update the record in the database.
+    // ON DUPLICATE KEY UPDATE handles both cases efficiently.
     $stmt = $mysqli->prepare("
         INSERT INTO forever_cart (visitor_token, product_id, quantity, last_updated)
         VALUES (?, ?, ?, NOW())
@@ -73,138 +85,26 @@ if (isset($item_removed)) {
     $stmt->bind_param("sii", $visitor_token, $product_id, $new_quantity);
 }
 
+// Execute the database query and handle potential errors.
 if (!$stmt->execute()) {
-    send_json_response(false, 'Database update failed');
+    // Log the actual database error for debugging instead of showing it to the user.
+    error_log('Cart DB Update Failed: ' . $stmt->error);
+    send_json_response(false, 'Could not update your cart due to a database error.');
 }
 
-// Prepare response
-$response = [
-    'newQuantity' => $new_quantity,
-    'itemRemoved' => $item_removed ?? false,
-    'totals' => calculate_cart_totals($_SESSION['cart'])
+// --- Prepare and Send Response ---
+
+// Calculate the new totals for the entire cart.
+$totals = calculate_cart_totals($_SESSION['cart']);
+
+// Prepare the data payload for the JSON response.
+$response_data = [
+    'newQuantity' => $item_removed ? 0 : $new_quantity,
+    'itemRemoved' => $item_removed,
+    'totals' => $totals
 ];
 
-send_json_response(true, 'Cart updated successfully', $response);
-$is_ajax = is_ajax_request();
+// Send a standardized success response back to the browser.
+send_json_response(true, 'Cart updated successfully!', $response_data);
 
-// CSRF Protection
-if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-    if ($is_ajax) {
-        ob_clean();
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'CSRF token validation failed.']);
-        exit;
-    } else {
-        set_flash_message('error', 'CSRF token validation failed. Please try again.');
-        header("Location: ../../public/cart.php"); 
-        exit;
-    }
-}
-
-// Get visitor token from cookie
-$visitor_token = $_COOKIE['visitor_token'] ?? null;
-if (!$visitor_token) {
-    set_flash_message('error', 'Visitor session not found.');
-    header("Location: ../../public/cart.php");
-    exit;
-}
-
-// Ensure session cart exists
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
-
-// Input validation
-$product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
-$action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
-$new_quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
-
-if (!$product_id) {
-    send_json_or_redirect(false, 'Invalid product ID.', $is_ajax);
-}
-
-// --- Begin Quantity Update Logic ---
-if (isset($_SESSION['cart'][$product_id])) {
-    if ($action === 'increase') {
-        $_SESSION['cart'][$product_id]['quantity']++;
-    } elseif ($action === 'decrease') {
-        $_SESSION['cart'][$product_id]['quantity']--;
-        if ($_SESSION['cart'][$product_id]['quantity'] <= 0) {
-            unset($_SESSION['cart'][$product_id]);
-        }
-    } elseif ($new_quantity !== null && $new_quantity >= 0) {
-        if ($new_quantity == 0) {
-            unset($_SESSION['cart'][$product_id]);
-        } else {
-            $_SESSION['cart'][$product_id]['quantity'] = $new_quantity;
-        }
-    }
-
-    // Sync with database (forever_cart)
-    if (isset($_SESSION['cart'][$product_id])) {
-        $quantity = $_SESSION['cart'][$product_id]['quantity'];
-        $stmt = $mysqli->prepare("INSERT INTO forever_cart (visitor_token, product_id, quantity, last_updated)
-                                  VALUES (?, ?, ?, NOW())
-                                  ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), last_updated = NOW()");
-        $stmt->bind_param("sii", $visitor_token, $product_id, $quantity);
-        $stmt->execute();
-    } else {
-        // Remove from DB if quantity is 0
-        $stmt = $mysqli->prepare("DELETE FROM forever_cart WHERE visitor_token = ? AND product_id = ?");
-        $stmt->bind_param("si", $visitor_token, $product_id);
-        $stmt->execute();
-    }
-
-} else {
-    send_json_or_redirect(false, 'Product not found in cart.', $is_ajax);
-}
-
-// Totals
-$subtotal = 0;
-foreach ($_SESSION['cart'] as $cart_item) {
-    $subtotal += $cart_item['price'] * $cart_item['quantity'];
-}
-$taxRate = 0.05;
-$shippingCost = 15;
-$tax = $subtotal * $taxRate;
-$grandTotal = $subtotal + $tax + ($subtotal > 0 ? $shippingCost : 0);
-
-$currentQuantity = $_SESSION['cart'][$product_id]['quantity'] ?? 0;
-$itemExistsInCart = isset($_SESSION['cart'][$product_id]);
-
-if ($is_ajax) {
-    ob_clean();
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => true,
-        'message' => 'Cart updated successfully.',
-        'cart' => $_SESSION['cart'],
-        'totals' => [
-            'subtotal' => number_format($subtotal, 2),
-            'tax' => number_format($tax, 2),
-            'shipping' => number_format(($subtotal > 0 ? $shippingCost : 0), 2),
-            'grandTotal' => number_format($grandTotal, 2)
-        ],
-        'updatedItemId' => $product_id,
-        'newItemQuantity' => $currentQuantity,
-        'itemRemoved' => !$itemExistsInCart && $new_quantity == 0
-    ]);
-    exit;
-}
-
-header("Location: ../../public/cart.php");
-exit;
-
-// Helper function
-function send_json_or_redirect($success, $message, $is_ajax) {
-    if ($is_ajax) {
-        ob_clean();
-        header('Content-Type: application/json');
-        echo json_encode(['success' => $success, 'message' => $message]);
-        exit;
-    } else {
-        set_flash_message($success ? 'success' : 'error', $message);
-        header("Location: ../../public/cart.php");
-        exit;
-    }
-}
+?>

@@ -1,18 +1,17 @@
 <?php
 
+// --- SETUP AND INITIALIZATION ---
 session_start();
 require_once '../includes/dbconfig.php';
 require_once '../includes/functions.php';
 
-// Generate or retrieve visitor token
-if (!isset($_COOKIE['visitor_token'])) {
-    $visitor_token = bin2hex(random_bytes(16));
-    setcookie('visitor_token', $visitor_token, time() + (86400 * 30), "/"); // 30 days
-} else {
-    $visitor_token = $_COOKIE['visitor_token'];
-}
+// --- VISITOR AND CART IDENTIFICATION ---
+// Ensure a unique token is set for the visitor to persist their cart.
+$visitor_token = get_or_create_visitor_token();
 
-// Load persistent cart from database
+// --- DATA FETCHING AND PROCESSING ---
+// Load the user's persistent cart from the database into the session.
+// This ensures the cart is available even if the session is lost.
 $stmt = $mysqli->prepare("
     SELECT fc.product_id, fc.quantity, p.name, p.price, p.image 
     FROM forever_cart fc
@@ -23,55 +22,51 @@ $stmt->bind_param("s", $visitor_token);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Update session cart
+// Populate the session cart from the database result.
 $_SESSION['cart'] = [];
-
 while ($row = $result->fetch_assoc()) {
     $product_id = $row['product_id'];
     $_SESSION['cart'][$product_id] = [
-        'id' => $product_id,
-        'name' => $row['name'],
-        'price' => $row['price'],
-        'image' => $row['image'],
+        'id'       => $product_id,
+        'name'     => $row['name'],
+        'price'    => $row['price'],
+        'image'    => $row['image'],
         'quantity' => $row['quantity']
     ];
 }
 
+// --- CSRF PROTECTION ---
+// Generate a CSRF token to protect against cross-site request forgery attacks.
+$csrf_token = generate_csrf_token();
 
-// Generate CSRF token if not already set by functions.php
-if (empty($_SESSION['csrf_token'])) {
-    generate_csrf_token(); // Ensure it's generated for the cart page
-}
-$csrf_token = $_SESSION['csrf_token'];
-
-
-// Handle item removal from cart
+// --- HANDLE DIRECT URL ACTIONS (e.g., item removal from a link) ---
+// This block is for non-JS scenarios or direct link actions.
 if (isset($_GET['remove']) && is_numeric($_GET['remove'])) {
-    $removeId = intval($_GET['remove']);
-    unset($_SESSION['cart'][$removeId]);
-    // Consider CSRF protection for removal as well if it's sensitive
+    $product_to_remove = intval($_GET['remove']);
+    
+    // Also remove from the persistent cart in the database.
+    $stmt = $mysqli->prepare("DELETE FROM forever_cart WHERE visitor_token = ? AND product_id = ?");
+    $stmt->bind_param("si", $visitor_token, $product_to_remove);
+    $stmt->execute();
+    
+    // Remove from the session cart.
+    unset($_SESSION['cart'][$product_to_remove]);
+    
+    // Redirect back to the cart to prevent re-submission on refresh.
     header("Location: cart.php");
     exit;
 }
 
-// Setup initial totals
+// --- CALCULATIONS FOR DISPLAY ---
+// Prepare variables for rendering in the HTML.
 $cartItems = $_SESSION['cart'] ?? [];
-$subtotal = 0;
-// Shipping and Tax Rates - these might come from config or db in a real app
-// $shippingCost = 0; // Example fixed shipping
-// $taxRate = 0.05;    // Example 5% tax rate
+$totals = calculate_cart_totals($cartItems); // Using the function from functions.php is cleaner
+$subtotal = $totals['subtotal'];
+$grandTotal = $totals['grandTotal'];
 
-// Calculate subtotal
-foreach ($cartItems as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
-}
 
-// $tax = $subtotal * $taxRate;
-// $currentShipping = ($subtotal > 0 ? $shippingCost : 0);
-
-// Calculate grand total
-$grandTotal = $subtotal;
-
+// --- PAGE RENDERING ---
+// Include the site header.
 include '../includes/header.php';
 ?>
 
@@ -218,264 +213,19 @@ include '../includes/header.php';
     </div>
 </section>
 
-<?php include '../includes/footer.php'; ?>
-<script>
-    const csrfToken = '<?php echo $csrf_token; ?>';
-    const updateCartUrl = '../admin/cart-logic/update-cart-quantity.php';
-    const removeCartUrl = '../admin/cart-logic/remove-from-cart.php';
+<?php 
+// --- SCRIPT DATA ---
+// Pass PHP variables to the external JavaScript file.
+// This is a secure way to make server-side data available to the client-side script.
+?>
+<span id="cart-script-data" 
+      data-csrf-token="<?php echo htmlspecialchars($csrf_token); ?>"
+      data-update-cart-url="../admin/cart-logic/update-cart-quantity.php"
+      data-remove-cart-url="../admin/cart-logic/remove-from-cart.php">
+</span>
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const cartItemsContainer = document.querySelector('.cart-items');
+<?php 
+include '../includes/footer.php'; 
+?>
 
-        if (cartItemsContainer) {
-            cartItemsContainer.addEventListener('click', function (event) {
-                const target = event.target.closest('button');
-                if (!target) return;
-
-                const productId = target.dataset.productId;
-                const tableRow = target.closest('tr');
-
-                if (target.classList.contains('btn-quantity-increase')) {
-                    updateCartQuantity(productId, 'increase', tableRow);
-                } else if (target.classList.contains('btn-quantity-decrease')) {
-                    updateCartQuantity(productId, 'decrease', tableRow);
-                } else if (target.classList.contains('btn-remove-item')) {
-                    const productName = target.dataset.productName;
-                    if (confirm(`Are you sure you want to remove "${productName}" from your cart?`)) {
-                        removeCartItem(productId, tableRow);
-                    }
-                }
-            });
-        }
-
-            // Update the updateCartQuantity function
-        function updateCartQuantity(productId, action, tableRow) {
-            const buttons = tableRow.querySelectorAll('.btn-quantity-increase, .btn-quantity-decrease');
-            buttons.forEach(btn => btn.disabled = true);
-
-            fetch(updateCartUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    product_id: productId,
-                    action: action,
-                    csrf_token: csrfToken
-                })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                if (!data.success) {
-                    throw new Error(data.message || 'Update failed');
-                }
-
-                const { newQuantity, itemRemoved, totals } = data.data;
-                
-                if (itemRemoved) {
-                    tableRow.remove();
-                    checkCartEmpty();
-                } else {
-                    // Update quantity display
-                    const quantitySpan = tableRow.querySelector('.item-quantity');
-                    const totalSpan = tableRow.querySelector('.item-total');
-                    const priceText = tableRow.querySelector('.item-price').textContent;
-                    const itemPrice = parseFloat(priceText.replace("GHS ", ""));
-                    
-                    if (quantitySpan) quantitySpan.textContent = newQuantity;
-                    if (totalSpan) {
-                        totalSpan.textContent = 'GHS ' + (itemPrice * newQuantity).toFixed(2);
-                    }
-                }
-
-                // Update order summary
-                updateOrderSummary(totals);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                displayCartMessage(error.message || 'Failed to update cart', 'error');
-            })
-            .finally(() => {
-                buttons.forEach(btn => btn.disabled = false);
-            });
-        }
-
-        // Update the updateOrderSummary function
-        function updateOrderSummary(totals) {
-            const subtotalEl = document.querySelector('.cart-subtotal');
-            const totalEl = document.querySelector('.cart-total');
-
-            if (subtotalEl) subtotalEl.textContent = 'GHS ' + totals.subtotal.toFixed(2);
-            if (totalEl) totalEl.textContent = 'GHS ' + totals.grandTotal.toFixed(2);
-        }
-
-        function removeCartItem(productId, tableRow) {
-            const formData = new FormData();
-            formData.append('product_id', productId);
-            formData.append('csrf_token', csrfToken);
-
-            fetch(removeCartUrl, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json()) // Changed from text() to json() directly
-            .then(data => {
-                // Only show error messages, not success messages
-                if (!data.success) {
-                    displayCartMessage(data.message, 'error');
-                }
-
-                if (data.success) {
-                    if (tableRow) tableRow.remove();
-                    checkCartEmpty();
-                    updateOrderSummary(data.totals);
-                }
-            })
-            .catch(error => {
-                console.error('Error removing item:', error);
-                displayCartMessage('Failed to remove item. Please try again.', 'error');
-            });
-        }
-
-        function updateOrderSummary(totals) {
-            if (totals) {
-                const subtotalEl = document.querySelector('.cart-subtotal');
-                const totalEl = document.querySelector('.cart-total');
-
-                if (subtotalEl) subtotalEl.textContent = 'GHS ' + totals.subtotal;
-                if (totalEl) totalEl.textContent = 'GHS ' + totals.grandTotal;
-            }
-        }
-
-        function checkCartEmpty() {
-            const cartItemsContainer = document.querySelector('.cart-items');
-            if (cartItemsContainer.querySelectorAll('tr:not(.cart-empty)').length === 0) {
-                cartItemsContainer.innerHTML = `<tr class="cart-empty"><td colspan="5" class="text-center py-5">Your cart is empty</td></tr>`;
-            }
-        }
-
-        function displayCartMessage(message, type = 'info') {
-            const messageArea = document.getElementById('cart-message-area');
-            if (!messageArea) return;
-
-            const alertClass = type === 'success' ? 'alert-success' : (type === 'error' ? 'alert-danger' : 'alert-info');
-            messageArea.innerHTML = `
-                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>`;
-
-            setTimeout(() => {
-                const alert = messageArea.querySelector('.alert');
-                if (alert) {
-                    alert.classList.remove('show');
-                    setTimeout(() => alert.remove(), 300);
-                }
-            }, 5000);
-        }
-
-        // Animations and style injections
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        });
-
-        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-        const styleElement = document.createElement('style');
-        styleElement.textContent = `
-            .btn-quantity-increase.clicked,
-            .btn-quantity-decrease.clicked {
-                background-color: #1C1C1C !important;
-                color: white !important;
-                transform: scale(0.95);
-            }
-
-            .btn-quantity-increase,
-            .btn-quantity-decrease {
-                transition: all 0.2s ease;
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-            }
-
-            .btn-quantity-increase:hover,
-            .btn-quantity-decrease:hover {
-                background-color: #1C1C1C;
-                color: white;
-                border-color: #1C1C1C;
-            }
-
-            @media (max-width: 767.98px) {
-                .table td {
-                    display: block;
-                    text-align: left;
-                    padding: 0.75rem 1rem;
-                    border-top: none;
-                    position: relative;
-                }
-
-                .table td:before {
-                    content: attr(data-label);
-                    font-weight: 600;
-                    margin-bottom: 0.5rem;
-                    display: block;
-                    font-size: 0.75rem;
-                    text-transform: uppercase;
-                    color: #1C1C1C;
-                }
-
-                .table tr {
-                    border-bottom: 1px solid #dee2e6;
-                    display: block;
-                    margin-bottom: 1rem;
-                    padding-bottom: 1rem;
-                }
-
-                .quantity-controls {
-                    justify-content: flex-start;
-                }
-
-                .card {
-                    margin-bottom: 1rem;
-                }
-            }
-
-            .fade-in {
-                opacity: 0;
-                transform: translateY(20px);
-                transition: opacity 0.5s ease, transform 0.5s ease;
-            }
-
-            .hover-lift {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-
-            .hover-lift:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-        `;
-        document.head.appendChild(styleElement);
-
-        document.querySelectorAll('.btn-quantity-increase, .btn-quantity-decrease').forEach(btn => {
-            btn.addEventListener('click', function () {
-                this.classList.add('clicked');
-                setTimeout(() => this.classList.remove('clicked'), 150);
-            });
-        });
-
-        setTimeout(() => {
-            document.querySelectorAll('.fade-in').forEach(el => {
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            });
-        }, 100);
-    });
-</script>
+<script src="../public/assert/js/cart.js"></script>

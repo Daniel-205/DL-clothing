@@ -1,50 +1,69 @@
- <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <h5 class="text-xl font-bold mb-4">DeLion Clothing</h5>
-                    <p class="text-gray-400">Quality and Afodable t-shirts with unique designs for every occasion.</p>
-                </div>
-                <div class="col-md-2 mb-4">
-                    <h6 class="font-bold mb-4">Shop</h6> 
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="shop.php" class="text-gray-400 hover:text-white">All Products</a></li>
-                        <li class="mb-2"><a href="shop.php" class="text-gray-400 hover:text-white">New Arrivals</a></li>
-                        <li class="mb-2"><a href="shop.php" class="text-gray-400 hover:text-white">Best Sellers</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-2 mb-4">
-                    <h6 class="font-bold mb-4">Company</h6>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="about.html" class="text-gray-400 hover:text-white">About Us</a></li>
-                        <!-- <li class="mb-2"><a href="#" class="text-gray-400 hover:text-white">Careers</a></li> -->
-                        <!-- <li class="mb-2"><a href="#" class="text-gray-400 hover:text-white">Blog</a></li> -->
-                    </ul>
+<!-- Footer -->
+    <footer class="bg-dark-theme text-white pt-5 pb-4">
+        <div class="container text-center text-md-left">
+            <div class="row text-center text-md-left">
+
+                <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 font-weight-bold text-warning">DeLion Clothing</h5>
+                    <p>Quality and Afodable t-shirts with unique designs for every occasion.</p>
                 </div>
 
-            </div>
-            <hr class="my-6 border-gray-700">
-            <div class="row">
-                <div class="col-md-6 text-center text-md-start">
-                    <p class="text-gray-400">&copy; 2025 DeLion Clothing. All rights reserved.</p>
+                <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Shop</h5>
+                    <p><a href="shop.php" class="text-white" style="text-decoration: none;">All Products</a></p>
+                    <p><a href="shop.php" class="text-white" style="text-decoration: none;">New Arrivals</a></p>
+                    <p><a href="shop.php" class="text-white" style="text-decoration: none;">Best Sellers</a></p>
                 </div>
-                <div class="col-md-6 text-center text-md-end">
-                    <div class="social-links">
-                        <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-pinterest"></i></a>
+
+                <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Company</h5>
+                    <p><a href="index.php#about" class="text-white" style="text-decoration: none;">About Us</a></p>
+                </div>
+
+                <!-- <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 font-weight-bold text-warning">Contact</h5>
+                    <p><i class="fas fa-home mr-3"></i> 123 Fashion Street, Los Angeles, CA 90015, USA</p>
+                    <p><i class="fas fa-phone mr-3"></i> +233 57103 4506</p>
+                    <p><i class="fas fa-clock mr-3"></i> Monday - Sunday: 23/7</p>
+                </div> -->
+            </div>
+
+            <hr class="mb-4">
+
+            <div class="row align-items-center">
+                <div class="col-md-7 col-lg-8">
+                    <p> &copy; 2025 DeLion Clothing. All rights reserved.</p>
+                </div>
+                <div class="col-md-5 col-lg-4">
+                    <div class="text-center text-md-right">
+                        <ul class="list-unstyled list-inline">
+                            <li class="list-inline-item">
+                                <a href="#" class="btn-floating btn-sm text-white" style="font-size: 23px;"><i class="fab fa-facebook"></i></a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#" class="btn-floating btn-sm text-white" style="font-size: 23px;"><i class="fab fa-twitter"></i></a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#" class="btn-floating btn-sm text-white" style="font-size: 23px;"><i class="fab fa-instagram"></i></a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#" class="btn-floating btn-sm text-white" style="font-size: 23px;"><i class="fab fa-pinterest"></i></a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Admin -->
-         <a href="../admin/login.php"> Admin</a>
+        <a href="../admin/login.php" class="btn-floating btn-sm text-white" style="font-size: 23px;">Admin</a>
+
     </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
 </body>
 </html>
-

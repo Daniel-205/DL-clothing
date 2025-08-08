@@ -4,24 +4,24 @@
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
-    color: #1C1C1C; /* Charcoal Black as primary text color */
+    color: #333333; /* Softer Black for text */
     background-color: #f8f9fa;
 }
 
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     margin-bottom: 1rem;
-    color: #1C1C1C; /* Charcoal Black for headings */
+    color: #003366; /* Deep Blue for headings */
 }
 
 a {
     text-decoration: none;
     transition: all 0.3s ease;
-    color: #1C1C1C;
+    color: #003366; /* Deep Blue for links */
 }
 
 a:hover {
-    color: #333;
+    color: #004080; /* Lighter Blue for hover */
 }
 
 /* Buttons */
@@ -33,26 +33,26 @@ a:hover {
 }
 
 .btn-indigo-600 {
-    background-color: #1C1C1C; /* Updated to Charcoal Black */
+    background-color: #003366; /* Deep Blue */
     color: white;
-    border-color: #1C1C1C;
+    border-color: #003366;
 }
 
 .btn-indigo-600:hover {
-    background-color: #333;
-    border-color: #333;
+    background-color: #004080;
+    border-color: #004080;
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .btn-outline-indigo-600 {
-    color: #1C1C1C;
-    border-color: #1C1C1C;
+    color: #003366;
+    border-color: #003366;
 }
 
 .btn-outline-indigo-600:hover {
-    background-color: #1C1C1C;
+    background-color: #003366;
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -68,14 +68,19 @@ a:hover {
 .navbar-brand {
     font-weight: 800;
     font-size: 1.5rem;
-    color: #1C1C1C;
+    color: #003366;
 }
 
 .nav-link {
     font-weight: 500;
     padding: 0.5rem 1rem;
-    color: #1C1C1C;
+    color: #333333;
     position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #003366;
 }
 
 .nav-link::after {
@@ -85,7 +90,7 @@ a:hover {
     height: 2px;
     bottom: 0;
     left: 50%;
-    background-color: #1C1C1C;
+    background-color: #003366;
     transition: all 0.3s ease;
 }
 
@@ -96,8 +101,8 @@ a:hover {
 
 /* Hero Section */
 .hero {
-    background-color: #f0f0f0;
-    padding: 5rem 0;
+    background-color: #eaf2f8; /* Light blue background */
+    padding: 6rem 0;
 }
 
 /* Product Cards */
@@ -157,7 +162,7 @@ a:hover {
     left: -4px;
     right: -4px;
     bottom: -4px;
-    border: 2px solid #1C1C1C;
+    border: 2px solid #003366;
     border-radius: 50%;
 }
 
@@ -178,9 +183,10 @@ a:hover {
 
 .table thead th {
     border-top: none;
-    border-bottom: 2px solid #1C1C1C;
+    border-bottom: 2px solid #003366;
     padding: 1rem;
     font-weight: 600;
+    color: #003366;
 }
 
 .table tbody td {
@@ -198,9 +204,9 @@ a:hover {
 
 .btn-quantity-increase:hover, 
 .btn-quantity-decrease:hover {
-    background-color: #1C1C1C;
+    background-color: #003366;
     color: white;
-    border-color: #1C1C1C;
+    border-color: #003366;
 }
 
 .btn-remove-item {
@@ -235,7 +241,7 @@ a:hover {
 .card-title {
     font-size: 1.2rem;
     font-weight: 600;
-    color: #1C1C1C;
+    color: #003366;
 }
 
 /* Checkout */
@@ -246,7 +252,7 @@ a:hover {
 
 /* Footer */
 footer {
-    background-color: #1C1C1C;
+    background-color: #003366;
     color: white;
     padding: 3rem 0;
 }
@@ -389,9 +395,79 @@ footer a:hover {
 
 /* Custom Colors */
 .bg-dark-theme {
-    background-color: #1C1C1C;
+    background-color: #003366;
 }
 
 .text-dark-theme {
-    color: #1C1C1C;
+    color: #003366;
+}
+
+.accent-color {
+    color: #FF6F61;
+}
+
+.bg-accent-color {
+    background-color: #FF6F61;
+}
+
+/* Feature Section */
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    color: #003366;
+    transition: transform 0.3s ease;
+}
+
+.feature-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Section Padding */
+.section {
+    padding: 5rem 0;
+}
+
+/* Footer Social Icons */
+.footer .social-links a {
+    font-size: 1.5rem;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.footer .social-links a:hover {
+    color: #FF6F61; /* Accent color */
+    transform: translateY(-3px);
+}
+
+@media (max-width: 767.98px) {
+    .footer .text-md-left {
+        text-align: center !important;
+    }
+    .footer .text-md-right {
+        text-align: center !important;
+    }
+}
+
+/* Shop Page Product Card */
+.product-card .price-tag {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #003366;
+}
+
+.product-card .add-to-cart-form button {
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.product-card .add-to-cart-form button:hover {
+    background-color: #FF6F61; /* Accent color */
+    border-color: #FF6F61;
+}
+
+/* Checkout Page */
+.order-summary-img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    margin-right: 15px;
 }

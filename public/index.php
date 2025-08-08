@@ -9,15 +9,15 @@
     <!-- Main Content (will be replaced by each page's content) -->
     <main id="main-content">
         <!-- Hero Section -->
-        <section class="hero bg-indigo-100 py-12">
+        <section class="hero">
             <div class="container">
                 <div class="row align-items-center">
-                    <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-up">
                         <h1 class="display-4 fw-bold mb-4">Premium Quality T-Shirts</h1>
                         <p class="lead mb-5">Discover our collection of comfortable, stylish t-shirts designed for every occasion.</p>
                         <a href="shop.php" class="btn btn-indigo-600 btn-lg px-4 py-2">Shop Now</a>
                     </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-6" data-aos="fade-left">
                         <img src="../uploads/shirt-mockup-concept-with-plain-clothing.jpg" alt="ThreadCraft T-Shirt" class="img-fluid rounded shadow">
                     </div>
                 </div>
@@ -25,9 +25,9 @@
         </section>
 
         <!-- Featured Products -->
-        <section class="py-12 bg-white">
+        <section class="section bg-white">
             <div class="container">
-                <h2 class="text-center mb-8 text-3xl font-bold">Featured Products</h2>
+                <h2 class="text-center mb-8 text-3xl font-bold" data-aos="fade-up">Featured Products</h2>
                 <div class="row featured-products">
                     <!-- Products will be loaded from database  -->
                     <?php                        
@@ -35,8 +35,9 @@
                         $result = $mysqli->query($sql);
                         
                         if ($result && $result->num_rows > 0) {
+                            $delay = 0;
                             while($row = $result->fetch_assoc()) {
-                                echo '<div class="col-md-3 mb-4">';
+                                echo '<div class="col-md-3 mb-4" data-aos="fade-up" data-aos-delay="' . $delay . '">';
                                 echo '    <div class="card h-100 border-0 shadow-sm product-card">';
                                 echo '        <div class="product-image-container">';
                                 // Assuming 'image' column stores the path relative to a base uploads directory e.g., 'uploads/image.jpg'
@@ -50,6 +51,7 @@
                                 echo '        </div>';
                                 echo '    </div>';
                                 echo '</div>';
+                                $delay += 100;
                             }
                         } else {
                             echo '<p class="text-center text-gray-600">No featured products available at the moment.</p>';
@@ -58,36 +60,36 @@
                     ?>
                     
                 </div>
-                <div class="text-center mt-6">
+                <div class="text-center mt-6" data-aos="fade-up">
                     <a href="shop.php" class="btn btn-outline-indigo-600 px-4 py-2">View All Products</a>
                 </div>
             </div>
         </section>
                <!-- Features -->
-        <section class="py-12 bg-gray-100">
+        <section class="section bg-gray-100">
             <div class="container">
                 <div class="row g-4">
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
                         <div class="text-center p-4">
-                            <div class="text-indigo-600 text-4xl mb-3">
+                            <div class="feature-icon">
                                 <i class="fas fa-truck"></i>
                             </div>
                             <h3 class="h5 mb-2">Fast Delivery</h3>
                             <p class="text-gray-600"> All Delivery Nation Wide</p>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
                         <div class="text-center p-4">
-                            <div class="text-indigo-600 text-4xl mb-3">
+                            <div class="feature-icon">
                                 <i class="fas fa-undo"></i>
                             </div>
                             <h3 class="h5 mb-2">Easy Returns</h3>
                             <p class="text-gray-600">30-day return policy for all items</p>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
                         <div class="text-center p-4">
-                            <div class="text-indigo-600 text-4xl mb-3">
+                            <div class="feature-icon">
                                 <i class="fas fa-lock"></i>
                             </div>
                             <h3 class="h5 mb-2">Secure Payment</h3>
@@ -102,10 +104,10 @@
         <!-- about us -->
 
 
-        <section class="py-8"  id="about">
+        <section class="section"  id="about">
             <div class="container">
                 <div class="row align-items-center mb-8">
-                    <div class="col-lg-6 mb-5 mb-lg-0">
+                    <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
                         <h1 class="display-4 fw-bold mb-4">Our Story</h1>
                         <!-- <p class="lead mb-4">DeLion Clothing was born out of a passion for quality, comfort,affordable, and minimalist design.</p> -->
                         <p>DELion Clothing is a small but growing business that started in 2015 with a simple idea to make affordable, quality T-shirts available in all colors 
@@ -114,34 +116,34 @@
                             we’re here to deliver quality you can wear with pride.
                         </p>
                     </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-6" data-aos="fade-left">
                         <img src="" alt="Our Story" class="img-fluid rounded shadow">
                     </div>
                 </div>
                 
                 <div class="row align-items-center mb-8">
-                    <div class="col-lg-6 order-lg-2 mb-5 mb-lg-0">
+                    <div class="col-lg-6 order-lg-2 mb-5 mb-lg-0" data-aos="fade-left">
                         <h2 class="mb-4 text-3xl font-bold">Our Mission</h2>
                         <p>To make high-quality, colorful T-shirts accessible to everyone at affordable prices, with styles that fit every mood, every day.We’re here to help you look good, feel confident, and express yourself without breaking the bank.</p>
                     </div>
-                    <div class="col-lg-6 order-lg-1">
+                    <div class="col-lg-6 order-lg-1" data-aos="fade-right">
                         <img src="../uploads/mission.jpg" alt="Our Mission" class="img-fluid rounded shadow">
                     </div>
                 </div>
                 
                 <div class="py-8 my-8 border-top border-bottom">
                     <div class="row justify-content-center text-center">
-                        <div class="col-lg-8">
+                        <div class="col-lg-8" data-aos="fade-up">
                             <h2 class="mb-4 text-3xl font-bold">Our Values</h2>
                             <p class="lead">Quality, Sustainability, and Transparency</p>
                         </div>
                     </div>
                     
                     <div class="row mt-6">
-                        <div class="col-md-4 mb-4">
+                        <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="0">
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body text-center p-5">
-                                    <div class="text-indigo-600 text-4xl mb-4">
+                                    <div class="feature-icon">
                                         <i class="fas fa-leaf"></i>
                                     </div>
                                     <h3 class="h5 mb-3">Sustainability</h3>
@@ -149,10 +151,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-4">
+                        <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body text-center p-5">
-                                    <div class="text-indigo-600 text-4xl mb-4">
+                                    <div class="feature-icon">
                                         <i class="fas fa-medal"></i>
                                     </div>
                                     <h3 class="h5 mb-3">Quality</h3>
@@ -160,10 +162,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-4">
+                        <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
                             <div class="card border-0 shadow-sm h-100">
                                 <div class="card-body text-center p-5">
-                                    <div class="text-indigo-600 text-4xl mb-4">
+                                    <div class="feature-icon">
                                         <i class="fas fa-globe"></i>
                                     </div>
                                     <h3 class="h5 mb-3">Ethical Production</h3>
@@ -177,16 +179,16 @@
         </section>
 
         <!-- contactt us -->
-        <section class="py-8" id="contact">
+        <section class="section" id="contact">
             <div class="container">
                 <div class="row mb-8">
-                    <div class="col-lg-6 mb-5 mb-lg-0">
+                    <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
                         <h1 class="display-4 fw-bold mb-4">Get in Touch</h1>
                         <p class="lead mb-4">We'd love to hear from you! Whether you have a question about our products, need help with an order, or just want to say hello, feel free to contact us.</p>
                         
                         <div class="d-flex mb-4">
-                            <div class="me-4 text-indigo-600">
-                                <i class="fas fa-map-marker-alt fa-2x"></i>
+                            <div class="me-4 feature-icon">
+                                <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <div>
                                 <h5 class="mb-1">Our Location</h5>
@@ -195,8 +197,8 @@
                         </div>
                         
                         <div class="d-flex mb-4">
-                            <div class="me-4 text-indigo-600">
-                                <i class="fas fa-phone-alt fa-2x"></i>
+                            <div class="me-4 feature-icon">
+                                <i class="fas fa-phone-alt"></i>
                             </div>
                             <div>
                                 <h5 class="mb-1">Phone Number</h5>
@@ -215,10 +217,11 @@
                         </div> -->
                         
                         <div class="d-flex">
-                            <div class="me-4 text-indigo-600">
-                                <i class="fas fa-clock fa-2x"></i>
+                            <div class="me-4 feature-icon">
+                                <i class="fas fa-clock"></i>
                             </div>
                             <div>
+
                                 <h5 class="mb-1">Working Hours</h5>
                                 <p class="text-gray-600 mb-0">Monday - Sunday: 23/7</p>
                             </div>
@@ -226,8 +229,8 @@
                     </div>
 
                 <!-- Google Map -->
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-0">
+                <div class="card border-0 shadow-sm" data-aos="fade-left">
+                    <div class="card-.body p-0">
                         <div class="map-container" style="height: 400px;">
                             <iframe src="https://maps.app.goo.gl/L72NbSMUB15EZFYPA?g_st=com.google.maps.preview.copy" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                         </div>

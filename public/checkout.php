@@ -4,6 +4,7 @@ require_once '../includes/dbconfig.php';
 require_once '../includes/functions.php';
 require_once '../includes/header.php';
 
+
 if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
     $_SESSION['flash_message'] = "Your cart is empty. Add products before checking out.";
     header("Location: cart.php");
@@ -122,62 +123,100 @@ $grandTotal = $subtotal;
 </head>
 <body>
 
-<div class="checkout-container">
-    
-  <!-- Billing Details -->
-  <div class="form-section">
-    <h3>Billing Details</h3>
-    <form action="../controllers/process-checkout.php" method="post">
-      <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
-      <div class="form-group">
-        <label for="fname">Full Name</label>
-        <input type="text" id="fname" name="full_name" required>
+<div class="container py-5">
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">Billing Details</h3>
+        </div>
+        <div class="card-body">
+          <form action="../controllers/process-checkout.php" method="post" id="checkout-form">
+            <input type="hidden" name="csrf_token" value="<?= generate_csrf_token() ?>">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="fname" class="form-label">Full Name</label>
+                <input type="text" id="fname" name="full_name" class="form-control" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="email" class="form-label">Email *</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="phone" class="form-label">Phone *</label>
+              <input type="tel" id="phone" name="phone" class="form-control" required>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="city" class="form-label">City *</label>
+                <input type="text" id="city" name="city" class="form-control" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="address" class="form-label">Delivery Address</label>
+                <input type="text" id="address" name="address" class="form-control" required>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-
-      <div class="form-group">
-        <label for="email">Email *</label>
-        <input type="email" id="email" name="email" required>
-      </div>
-
-      <div class="form-group">
-        <label for="phone">Phone *</label>
-        <input type="tel" id="phone" name="phone" required>
-      </div>
-
-      <div class="form-group">
-        <label for="city">City *</label>
-        <input type="text" id="city" name="city" required>
-      </div>
-
-      <div class="form-group">
-        <label for="address">Delivery Address </label>
-        <input type="text" id="address" name="address" required>
-      </div>
-  </div>
-
-  <!-- Order Summary -->
-  <div class="summary-section">
-    <h3>Your Order</h3>
-    <div class="order-summary">
-      <ul class="mb-4">
-        <?php foreach ($cart as $item): ?>
-          <li class="flex justify-between border-b py-1">
-            <span><?= htmlspecialchars($item['name']) ?> × <?= $item['quantity'] ?></span>
-            <span>GHS <?= number_format($item['price'] * $item['quantity'], 2) ?></span>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-
-      <div class="space-y-1">
-        <p class="font-bold text-lg">Total: GHS <?= number_format($grandTotal, 2) ?></p>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Payment Method</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" form="checkout-form" checked>
+            <label class="form-check-label" for="cod">
+              Cash on Delivery
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="payment_method" id="momo" value="momo" form="checkout-form">
+            <label class="form-check-label" for="momo">
+              Mobile Money
+            </label>
+          </div>
+        </div>
       </div>
     </div>
-
-    <input type="hidden" name="order_total" value="<?= $grandTotal ?>">
-    <button type="submit" class="place-order-btn">Place Order</button>
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Your Order</h3>
+        </div>
+        <div class="card-body">
+          <div class="order-summary">
+            <ul class="list-group list-group-flush">
+              <?php foreach ($cart as $item): ?>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <img src="../<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="order-summary-img">
+                    <div>
+                      <p class="mb-0"><?= htmlspecialchars($item['name']) ?></p>
+                      <small class="text-muted">Quantity: <?= $item['quantity'] ?></small>
+                    </div>
+                  </div>
+                  <span>GHS <?= number_format($item['price'] * $item['quantity'], 2) ?></span>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+            <div class="d-flex justify-content-between font-weight-bold mt-3">
+              <p class="mb-0">Total:</p>
+              <p class="mb-0">GHS <?= number_format($grandTotal, 2) ?></p>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <input type="hidden" name="order_total" value="<?= $grandTotal ?>" form="checkout-form">
+          <button type="submit" class="btn btn-primary w-100" form="checkout-form">Place Order</button>
+        </div>
+      </div>
+    </div>
   </div>
-  </form> <!-- Close form here -->
 </div>
 
 </body>
 </html>
+
+<?php   require_once '../includes/footer.php'; ?>

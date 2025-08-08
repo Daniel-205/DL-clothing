@@ -21,26 +21,30 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
 <body>
     <!-- Navigation would be included here -->
     
-    <div class="container py-5">
-        <!-- Search Header -->
-        <div class="row mb-5">
-            <div class="col-lg-6 mx-auto text-center">
-                <h1 class="display-5 mb-4">Discover Our T-Shirts</h1>
-                <!-- <form class="d-flex">
-                    <input type="text" name="search" 
-                           class="form-control search-box py-3 px-4" 
-                           placeholder="Search by style, color...">
-                    <button class="btn btn-primary search-btn px-4" type="submit">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </form> -->
+    <div class="container-fluid bg-light py-5">
+        <div class="container text-center">
+            <h1 class="display-4">Shop Our Collection</h1>
+            <p class="lead">Find the perfect t-shirt for any occasion.</p>
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <form class="d-flex">
+                        <input type="text" name="search" class="form-control me-2" placeholder="Search for products...">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </form>
+                </div>
             </div>
         </div>
+    </div>
 
+    <div class="container py-5">
+        <h2 class="text-center mb-5">Our Products</h2>
         <!-- Product Grid -->
         <div class="row g-4">
-            <?php foreach ($products as $product): ?>
-                <div class="col-xl-3 col-lg-4 col-md-6">
+            <?php 
+            $delay = 0;
+            foreach ($products as $product): 
+            ?>
+                <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="<?= $delay ?>">
                     <div class="product-card h-100">
                         <div class="position-relative">
                             <!-- Product Image -->
@@ -68,7 +72,13 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
                         </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
+            <?php 
+            $delay += 100;
+            endforeach; 
+            ?>
+        </div>
+        <div class="text-center mt-5">
+            <button class="btn btn-outline-dark">Load More</button>
         </div>
     </div>
     <?php include '../includes/footer.php'; ?>

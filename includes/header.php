@@ -34,6 +34,8 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
     <link href="./assert/css/main.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- AOS CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
     <style>
         /* Side Cart Styles */
         .side-cart {

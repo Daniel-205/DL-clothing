@@ -4,7 +4,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Global Variables & Elements ---
     const sideCart = document.getElementById('side-cart');
     const closeCartBtn = document.getElementById('close-cart-btn');
-    const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : null; // Assuming CSRF token is in a meta tag. We need to add this to header.php
+    const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : null;
+
+    // --- Utility Functions ---
+    function updateCartIcon(totalItems) {
+        const cartCount = document.querySelector('.cart-count');
+        if (cartCount) {
+            cartCount.textContent = totalItems;
+            if (totalItems > 0) {
+                cartCount.classList.remove('d-none');
+            } else {
+                cartCount.classList.add('d-none');
+            }
+        }
+    }
+
+    function updateSideCart(cart, totals) {
+        const sideCartBody = document.querySelector('.side-cart-body');
+        const sideCartSubtotal = document.getElementById('side-cart-subtotal');
+
+        if (!sideCartBody || !sideCartSubtotal) return;
+
+        sideCartBody.innerHTML = ''; // Clear existing items
+
+        if (Object.keys(cart).length === 0) {
+            sideCartBody.innerHTML = '<div class="text-center text-muted">Your cart is empty.</div>';
+            sideCartSubtotal.textContent = 'GHS 0.00';
+        } else {
+            for (const itemId in cart) {
+                const item = cart[itemId];
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('side-cart-item');
+                itemElement.innerHTML = `
+                    <img src="../${item.image}" alt="${item.name}">
+                    <div>
+                        <strong>${item.name}</strong>
+                        <div>${item.quantity} x GHS ${parseFloat(item.price).toFixed(2)}</div>
+                    </div>
+                `;
+                sideCartBody.appendChild(itemElement);
+            }
+            sideCartSubtotal.textContent = `GHS ${totals.subtotal}`;
+        }
+    }
 
     // --- Side Cart Logic ---
     function openSideCart() {
@@ -30,9 +72,9 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const formData = new FormData(form);
             
-            // Get CSRF token from meta tag and append to form data
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            formData.append('csrf_token', csrfToken);
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken);
+            }
 
             fetch('../admin/cart-logic/add-to-cart.php', {
                 method: 'POST',
@@ -42,12 +84,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    updateSideCart(data.data.cart);
+                    updateSideCart(data.data.cart, data.data.totals);
                     updateCartIcon(data.data.totals.totalItems);
                     openSideCart();
                 } else {
-                    // Handle error, maybe show a toast notification
-                    alert(data.message);
+                    alert(data.message || 'Could not add item to cart.');
                 }
             })
             .catch(error => {
@@ -57,50 +98,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    function updateSideCart(cart) {
-        const sideCartBody = document.querySelector('.side-cart-body');
-        const sideCartSubtotal = document.getElementById('side-cart-subtotal');
-
-        if (!sideCartBody || !sideCartSubtotal) return;
-
-        sideCartBody.innerHTML = ''; // Clear existing items
-
-        if (Object.keys(cart).length === 0) {
-            sideCartBody.innerHTML = '<div class="text-center text-muted">Your cart is empty.</div>';
-        } else {
-            for (const itemId in cart) {
-                const item = cart[itemId];
-                const itemElement = document.createElement('div');
-                itemElement.classList.add('side-cart-item');
-                itemElement.innerHTML = `
-                    <img src="../${item.image}" alt="${item.name}">
-                    <div>
-                        <strong>${item.name}</strong>
-                        <div>${item.quantity} x GHS ${parseFloat(item.price).toFixed(2)}</div>
-                    </div>
-                `;
-                sideCartBody.appendChild(itemElement);
+    // --- Initial Cart Load ---
+    function updateCartOnPageLoad() {
+        fetch('../admin/cart-logic/get-cart.php', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-        }
-
-        // Calculate subtotal
-        let subtotal = 0;
-        for (const itemId in cart) {
-            const item = cart[itemId];
-            subtotal += item.price * item.quantity;
-        }
-        sideCartSubtotal.textContent = `GHS ${subtotal.toFixed(2)}`;
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateCartIcon(data.data.totals.totalItems);
+                updateSideCart(data.data.cart, data.data.totals);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching initial cart state:', error);
+        });
     }
+
+    // Load cart data as soon as the page is ready
+    updateCartOnPageLoad();
 });
-
-function updateCartIcon(totalItems) {
-    const cartCount = document.querySelector('.cart-count');
-    if (cartCount) {
-        cartCount.textContent = totalItems;
-        if (totalItems > 0) {
-            cartCount.classList.remove('d-none');
-        } else {
-            cartCount.classList.add('d-none');
-        }
-    }
-}

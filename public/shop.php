@@ -4,7 +4,7 @@ include '../includes/dbconfig.php';
  include '../includes/header.php'; 
 
 // Fetch products
-$query = "SELECT * FROM products LIMIT 8";
+$query = "SELECT * FROM products ";
 $result = $mysqli->query($query);
 $products = $result->fetch_all(MYSQLI_ASSOC);
 ?>
@@ -77,9 +77,7 @@ $products = $result->fetch_all(MYSQLI_ASSOC);
             endforeach; 
             ?>
         </div>
-        <div class="text-center mt-5">
-            <button class="btn btn-outline-dark">Load More</button>
-        </div>
+        
     </div>
     <?php include '../includes/footer.php'; ?>
 

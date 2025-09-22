@@ -2,14 +2,23 @@
 session_start();
 require_once '../includes/dbconfig.php';
 require_once '../includes/functions.php';
-require_once '../includes/header.php';
+// The cart loading logic MUST come before any check that might cause a redirect.
+require_once '../includes/cart-function.php';
 
-
-if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
-    $_SESSION['flash_message'] = "Your cart is empty. Add products before checking out.";
-    header("Location: cart.php");
-    exit;
+// Load the persistent cart into the session first.
+if (isset($mysqli)) {
+    load_persistent_cart_into_session($mysqli);
 }
+
+// Now, with the session populated, check if the cart is empty.
+if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
+    // Use the redirect_with_message function for consistency
+    redirect_with_message('cart.php', 'Your cart is empty. Add products before checking out.', 'info');
+}
+
+// The cart is not empty, so we can proceed to display the page.
+// The header will be included now, which is safe because we are no longer redirecting.
+require_once '../includes/header.php';
 
 $cart = $_SESSION['cart'] ?? [];
 $subtotal = 0;

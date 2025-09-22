@@ -1,10 +1,12 @@
 <?php
 // Step 1: Connect to the database
 require_once '../includes/dbconfig.php';
+require_once '../includes/functions.php'; // Needed for CSRF token
 
 // Step 2: Get all orders
 $sql = "SELECT * FROM orders ORDER BY created_at DESC";
 $result = $mysqli->query($sql);
+$csrf_token = generate_csrf_token();
 ?>
 
 <!DOCTYPE html>
@@ -47,6 +49,7 @@ $result = $mysqli->query($sql);
                             <td>
                                 <form action="./adfunc/update-status.php" method="POST" style="display:inline-block;">
                                     <input type="hidden" name="order_id" value="<?= $row['id'] ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
                                     <?php if ($row['status'] === 'pending'): ?>
                                         <button type="submit" class="btn btn-sm btn-success">Mark as Completed</button>
                                     <?php else: ?>

@@ -68,7 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($uploadResult['success']) {
                 $filesystem_image_path = $uploadResult['filename']; // Full filesystem path
                 $filename_only = basename($filesystem_image_path);
-                $new_image_db_path = $db_storage_path_prefix . $filename_only; // Path for DB
+
+                // Sanitize the image by resizing it
+                $sanitized_filesystem_path = $filesystem_upload_dir . 'product_' . $filename_only;
+                resizeImage($filesystem_image_path, $sanitized_filesystem_path, 500, 80);
+
+                // Delete the original uploaded file
+                if (file_exists($filesystem_image_path)) {
+                    unlink($filesystem_image_path);
+                }
+
+                // Set the DB path to the new sanitized image
+                $new_image_db_path = $db_storage_path_prefix . 'product_' . $filename_only;
 
                 // TODO: Consider deleting the old image if a new one is uploaded successfully.
                 // This would require fetching the old image path from $product['image']

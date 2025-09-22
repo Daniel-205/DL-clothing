@@ -13,14 +13,29 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
-// Check if product ID is provided
-if (!isset($_GET['id']) || empty($_GET['id'])) {
+// --- Security Checks ---
+// 1. Check if the request method is POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    set_flash_message('error', 'Invalid request method.');
+    header("Location: dashboard.php");
+    exit;
+}
+
+// 2. Verify CSRF token
+if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+    set_flash_message('error', 'Invalid CSRF token.');
+    header("Location: dashboard.php");
+    exit;
+}
+
+// 3. Check if product ID is provided
+if (!isset($_POST['id']) || empty($_POST['id'])) {
     set_flash_message('error', 'No product ID provided.');
     header("Location: dashboard.php");
     exit;
 }
 
-$product_id = (int)$_GET['id'];
+$product_id = (int)$_POST['id'];
 
 try {
     // First, get the product details to retrieve the image path
@@ -43,9 +58,9 @@ try {
     
     if ($delete_stmt->execute()) {
         // If database deletion successful, try to delete the image file
-        if (!empty($product['image']) && file_exists($product['image'])) {
+        if (!empty($product['image']) && file_exists('../' . $product['image'])) { // Corrected path for file_exists
             // Delete the image file
-            if (unlink($product['image'])) {
+            if (unlink('../' . $product['image'])) { // Corrected path for unlink
                 $message = 'Product and image deleted successfully.';
             } else {
                 $message = 'Product deleted successfully, but could not delete image file.';
@@ -68,6 +83,8 @@ try {
 }
 
 // Close database connection
+if (isset($stmt)) $stmt->close();
+if (isset($delete_stmt)) $delete_stmt->close();
 $mysqli->close();
 
 // Redirect back to dashboard

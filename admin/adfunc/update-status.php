@@ -1,9 +1,23 @@
 <?php
+session_start();
 // Step 1: Connect to the database
 require_once '../../includes/dbconfig.php';
+require_once '../../includes/functions.php';
 
-// Step 2: Check if it's a valid POST request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'])) {
+// --- Security Checks ---
+// 1. Check if the request method is POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    // Or redirect, or show a generic error page
+    die('Invalid request method.');
+}
+
+// 2. Verify CSRF token
+if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+    die('Invalid CSRF token.');
+}
+
+// Check if order_id is provided
+if (isset($_POST['order_id'])) {
     $order_id = intval($_POST['order_id']); // Sanitize
 
     // Step 3: Fetch order details (name, phone) for WhatsApp message

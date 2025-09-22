@@ -5,6 +5,14 @@ if (session_status() == PHP_SESSION_NONE) {
 
 
 require_once '../includes/functions.php';
+require_once '../includes/dbconfig.php';
+require_once '../includes/cart-function.php';
+
+// Load the persistent cart into the session
+if (isset($mysqli)) {
+    load_persistent_cart_into_session($mysqli);
+}
+
 
 // Ensure a CSRF token is generated for all pages.
 $csrf_token = generate_csrf_token();
@@ -80,6 +88,72 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
             object-fit: cover;
             margin-right: 1rem;
         }
+
+
+        
+
+
+                
+        /* WhatsApp button styles */
+        .whatsapp-btn {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            bottom: 40px;
+            right: 40px;
+            background-color: #25d366;
+            color: #FFF;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 30px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-btn:hover {
+            background-color: #20ba5a;
+            transform: scale(1.1);
+        }
+
+        /* Tooltip for the button */
+        .whatsapp-btn::after {
+            content: "Chat with us!";
+            position: absolute;
+            right: 70px;
+            top: 15px;
+            background-color: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .whatsapp-btn:hover::after {
+            opacity: 1;
+        }
+
+        /* For smaller screens */
+        @media screen and (max-width: 600px) {
+            .whatsapp-btn {
+                width: 50px;
+                height: 50px;
+                right: 20px;
+                bottom: 20px;
+                font-size: 25px;
+            }
+        }
+
+
+
+
     </style>
 </head>
 <body>
@@ -94,7 +168,7 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="shop.php">Shop</a></li>
-                    <li class="nav-item"><a class="nav-link" href="index.php#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="index.php#contact">Contact</a></li>
                     <li class="nav-item ms-2">
                         <a class="nav-link position-relative" href="cart.php">
@@ -128,6 +202,10 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
             <a href="checkout.php" class="btn btn-success w-100">Checkout</a>
         </div>
     </div>
+
+    <a href="https://wa.me/233544125283" class="whatsapp-btn" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
 <script src="./assert/js/main.js"></script>
 

@@ -10,30 +10,8 @@ require_once '../includes/functions.php';
 $visitor_token = get_or_create_visitor_token();
 
 // --- DATA FETCHING AND PROCESSING ---
-// Load the user's persistent cart from the database into the session.
-// This ensures the cart is available even if the session is lost.
-$stmt = $mysqli->prepare("
-    SELECT fc.product_id, fc.quantity, p.name, p.price, p.image 
-    FROM forever_cart fc
-    JOIN products p ON fc.product_id = p.id
-    WHERE fc.visitor_token = ?
-");
-$stmt->bind_param("s", $visitor_token);
-$stmt->execute();
-$result = $stmt->get_result();
-
-// Populate the session cart from the database result.
-$_SESSION['cart'] = [];
-while ($row = $result->fetch_assoc()) {
-    $product_id = $row['product_id'];
-    $_SESSION['cart'][$product_id] = [
-        'id'       => $product_id,
-        'name'     => $row['name'],
-        'price'    => $row['price'],
-        'image'    => $row['image'],
-        'quantity' => $row['quantity']
-    ];
-}
+// The cart is now loaded into the session via header.php,
+// so this block is no longer needed here.
 
 // --- CSRF PROTECTION ---
 // Generate a CSRF token to protect against cross-site request forgery attacks.

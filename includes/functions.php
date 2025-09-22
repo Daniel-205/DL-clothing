@@ -372,11 +372,14 @@ function generate_csrf_token() {
  * @return bool
  */
 function verify_csrf_token($token) {
+    // It is the responsibility of the calling script to ensure a session has been started.
     if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+        // Optionally log an error here, as this indicates a programming error.
+        error_log("verify_csrf_token called without an active session.");
+        return false;
     }
     
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    return isset($_SESSION['csrf_token']) && !empty($token) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 /**
